@@ -88,13 +88,6 @@ Phase III oncology trials average **$50-100M** and take **4-6 years** to complet
 
 **→ [Try Zetyra](https://zetyra.com) | [Read the Whitepaper](https://zetyra.com/whitepaper)**
 
-## Get in Touch
-
-- **Website:** [evidenceinthewild.com](https://evidenceinthewild.com)
-- **Zetyra:** [zetyra.com](https://zetyra.com)
-- **LinkedIn:** [linkedin.com/in/luqian](https://www.linkedin.com/in/luqian/)
-- **Email:** maggie@zetyra.com
-
 ---
 
 *Building tools and providing expertise to make rigorous statistical design accessible to everyone running clinical trials.*
