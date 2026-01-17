@@ -13,11 +13,11 @@ During that time, I identified recurring failure patterns: *protocols locked in 
 I founded **Evidence in the Wild** and **Zetyra** on the belief that **the most expensive experiment is the one that was doomed from the start.**
 
 **What drives my work:**
-- Building [Zetyra](https://zetyra.com) — the tool I wished I had, combining rigorous validated methods with a modern interface that doesn't require a PhD to operate
+- Building [Zetyra](https://zetyra.com): the tool I wished I had, combining rigorous validated methods with a modern interface that doesn't require a PhD to operate
 - Providing honest consulting through [Evidence in the Wild](https://evidenceinthewild.com) on trial design before teams invest millions
 - Democratizing statistical tools traditionally locked behind $5,000-$15,000/year enterprise paywalls
 
-Beyond work, I train for Ironman and marathon competitions—pacing matters in both athletics and trial design.
+Beyond work, I train for Ironman and marathon competitions. Pacing matters in both athletics and trial design.
 
 **Core Philosophy:**
 - **Web-First:** Browser-based, shareable designs without installation barriers
@@ -61,7 +61,7 @@ Beyond work, I train for Ironman and marathon competitions—pacing matters in b
 
 ### What I Don't Do
 
-I focus on high-level trial design — I don't provide hourly SAS programming, data cleaning services, or tutoring.
+I focus on high-level trial design. I don't provide hourly SAS programming, data cleaning services, or tutoring.
 
 **→ [Learn more about consulting services](https://evidenceinthewild.com/services/)**
 
