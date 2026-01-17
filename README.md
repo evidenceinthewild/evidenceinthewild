@@ -4,9 +4,7 @@
 
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/luqian/)
 [![X](https://img.shields.io/badge/X-000000?style=for-the-badge&logo=x&logoColor=white)](https://x.com/EvidenceWild)
-[![Website](https://img.shields.io/badge/Website-000000?style=for-the-badge&logo=About.me&logoColor=white)](https://evidenceinthewild.com)
 [![Email](https://img.shields.io/badge/Email-D14836?style=for-the-badge&logo=gmail&logoColor=white)](mailto:maggie@zetyra.com)
-[![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.18253308-blue?style=for-the-badge&logo=doi)](https://doi.org/10.5281/zenodo.18253308)
 
 I build statistical design tools and provide consulting services for clinical trials, specializing in oncology and adaptive designs.
 
@@ -72,6 +70,8 @@ I focus on high-level trial design. I don't provide hourly SAS programming, data
 **→ [Learn more about consulting services](https://evidenceinthewild.com/services/)**
 
 ## Zetyra
+
+[![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.18253308-blue?style=for-the-badge&logo=doi)](https://doi.org/10.5281/zenodo.18253308)
 
 [**Zetyra**](https://zetyra.com) is a web-based statistical software platform democratizing efficient clinical trial design.
 
