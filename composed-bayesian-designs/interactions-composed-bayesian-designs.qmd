@@ -1,0 +1,503 @@
+---
+title: "Interactions in Composed Bayesian Trial Designs"
+subtitle: "Computational Supplement to FDA Guidance Comments (Docket No. FDA-2025-D-3217)"
+author: "Lu Qian"
+date: "2026-03-03"
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    code-fold: true
+    code-summary: "Show code"
+    theme: cosmo
+    fig-width: 8
+    fig-height: 5
+    fig-dpi: 150
+    self-contained: true
+execute:
+  warning: false
+  message: false
+---
+
+## Overview
+
+The FDA's draft guidance on Bayesian methodology in clinical trials (January 2026) addresses design components---prior specification, borrowing, effective sample size, success criteria, and sequential monitoring---in separate sections. In practice, sponsors compose these components into integrated pipelines. This supplement demonstrates computationally that the operating characteristics of composed Bayesian designs can differ materially from what component-level analyses predict.
+
+All simulations use analytic Beta-Binomial conjugate computations (no MCMC). Source code is embedded and fully reproducible.
+
+**Design scenario throughout:** A single-arm trial with binary endpoint (response rate). Historical data from 100 patients with 30 responders establishes the null rate at 0.30. The trial uses a dynamic mixture prior that borrows from this historical data, with three sequential looks at $n = 30, 60, 90$.
+
+## Setup
+
+```{r}
+#| label: setup
+#| code-fold: false
+
+set.seed(20260307)
+
+# ---------------------------------------------------------------------------
+# Mixture prior posterior computations (Beta-Binomial conjugate)
+# ---------------------------------------------------------------------------
+
+#' Prior: w0 * Beta(a1, b1) + (1-w0) * Beta(a0, b0)
+#' Returns posterior weight, ESS, and component parameters
+mixture_posterior <- function(y, n, a1, b1, a0, b0, w0) {
+  log_m1 <- lbeta(a1 + y, b1 + n - y) - lbeta(a1, b1)
+  log_m0 <- lbeta(a0 + y, b0 + n - y) - lbeta(a0, b0)
+  log_w1 <- log(w0) + log_m1
+  log_w0 <- log(1 - w0) + log_m0
+  log_denom <- pmax(log_w1, log_w0) +
+    log(exp(log_w1 - pmax(log_w1, log_w0)) +
+        exp(log_w0 - pmax(log_w1, log_w0)))
+  w_post <- exp(log_w1 - log_denom)
+
+  list(w_post = w_post,
+       ess = w_post * (a1 + b1) + (1 - w_post) * (a0 + b0),
+       a1_post = a1 + y, b1_post = b1 + n - y,
+       a0_post = a0 + y, b0_post = b0 + n - y)
+}
+
+#' Pr(p > threshold | data) under mixture posterior
+post_prob_gt <- function(threshold, post) {
+  post$w_post * pbeta(threshold, post$a1_post, post$b1_post, lower.tail = FALSE) +
+    (1 - post$w_post) * pbeta(threshold, post$a0_post, post$b0_post, lower.tail = FALSE)
+}
+
+# ---------------------------------------------------------------------------
+# Design parameters
+# ---------------------------------------------------------------------------
+
+# Historical data
+n_hist <- 100; y_hist <- 30; p_hist <- 0.30
+
+# Informative component: Beta(31, 71) from historical + Beta(1,1) baseline
+a_info <- 31; b_info <- 71
+
+# Weakly informative component: Beta(1, 1)
+a_weak <- 1; b_weak <- 1
+
+# Initial mixture weight
+w_init <- 0.70
+
+# Null hypothesis and sequential looks
+p_null <- 0.30
+n_looks <- c(30, 60, 90)
+n_max <- 90
+
+# Design-stage ESS
+design_ess <- w_init * (a_info + b_info) + (1 - w_init) * (a_weak + b_weak)
+
+cat(sprintf("Prior: %.0f%% × Beta(%d, %d) + %.0f%% × Beta(%d, %d)\n",
+            w_init * 100, a_info, b_info, (1 - w_init) * 100, a_weak, b_weak))
+cat(sprintf("Design-stage ESS from prior: %.1f\n", design_ess))
+cat(sprintf("Sequential looks at n = %s\n", paste(n_looks, collapse = ", ")))
+```
+
+## 1. Borrowing Weight Is Not Stable Across Interim Looks
+
+The guidance treats prior specification (Section V.D) and sequential monitoring (Section IV.A.4) as separate concerns. But when a dynamic mixture prior updates its component weights based on accumulating data, the effective prior at each interim look is different. Early looks---with less data to detect conflict---tend to preserve the informative component's weight. Later looks may reduce it substantially.
+
+This means the prior that governs the interim decision at Look 1 is not the same prior that governs the decision at Look 3. Any stopping boundary calibrated under the assumption of a fixed prior is operating under a false premise.
+
+```{r}
+#| label: fig-weight-trajectories
+#| fig-cap: "Posterior weight on the informative component across sequential looks. Lines show medians; vertical bars show interquartile ranges across 5,000 simulations. Under no conflict (p = 0.30), the dynamic mechanism *increases* borrowing beyond the initial 70% weight. Under severe conflict (p = 0.15), borrowing collapses, but only after enough data accumulates to detect the conflict."
+#| fig-width: 8
+#| fig-height: 5
+
+p_scenarios <- c(0.30, 0.25, 0.20, 0.15, 0.40, 0.50)
+scenario_labels <- c("p = 0.30 (no conflict)", "p = 0.25 (mild)",
+                      "p = 0.20 (moderate)", "p = 0.15 (severe)",
+                      "p = 0.40 (mild, opposite)", "p = 0.50 (severe, opposite)")
+nsim_traj <- 5000
+
+weight_summary <- array(NA, dim = c(length(p_scenarios), 3, 3))
+ess_summary <- array(NA, dim = c(length(p_scenarios), 3, 3))
+
+for (s in seq_along(p_scenarios)) {
+  for (k in seq_along(n_looks)) {
+    y_cum <- rbinom(nsim_traj, n_looks[k], p_scenarios[s])
+    post <- mixture_posterior(y_cum, n_looks[k], a_info, b_info, a_weak, b_weak, w_init)
+    weight_summary[s, k, ] <- quantile(post$w_post, c(0.5, 0.25, 0.75))
+    ess_summary[s, k, ] <- quantile(post$ess, c(0.5, 0.25, 0.75))
+  }
+}
+
+par(mar = c(5.5, 4.5, 2.5, 1))
+cols <- c("#2166AC", "#4393C3", "#D6604D", "#B2182B", "#92C5DE", "#67001F")
+
+plot(NULL, xlim = c(0.8, 3.2), ylim = c(0, 1),
+     xlab = "", ylab = "Posterior Weight on Informative Component",
+     main = "Borrowing Weight Across Sequential Looks", xaxt = "n", las = 1)
+axis(1, at = 1:3, labels = paste0("Look ", 1:3, " (n=", n_looks, ")"), padj = 0.5)
+mtext("Interim Look", side = 1, line = 4.2, cex = 1.1)
+abline(h = w_init, lty = 2, col = "gray50")
+text(0.8, w_init + 0.03, expression(w[0] == 0.70), col = "gray50", cex = 0.8, adj = 0)
+
+for (s in seq_along(p_scenarios)) {
+  lines(1:3, weight_summary[s, , 1], col = cols[s], lwd = 2.5, type = "b", pch = 16)
+  for (k in 1:3) {
+    segments(k, weight_summary[s, k, 2], k, weight_summary[s, k, 3],
+             col = adjustcolor(cols[s], 0.4), lwd = 4)
+  }
+}
+
+legend(1.2, 0.35, legend = scenario_labels[c(4, 3, 2, 1, 5, 6)],
+       col = cols[c(4, 3, 2, 1, 5, 6)], lwd = 2, pch = 16, cex = 0.7, bty = "n")
+```
+
+The same dynamic applies to effective sample size. Under no conflict, the realized ESS exceeds the design assumption because the informative weight increases. Under drift, ESS collapses at later looks once enough data accumulates to detect the discrepancy. The design-stage ESS of `r round(design_ess, 0)` is not a fixed quantity---it is a random variable whose distribution depends on both the true parameter and the look at which it is evaluated.
+
+```{r}
+#| label: fig-ess-trajectories
+#| fig-cap: "Effective sample size from the prior across sequential looks. Lines show medians; vertical bars show interquartile ranges across 5,000 simulations. The dashed line marks the design-stage ESS. Under no conflict, realized ESS exceeds the design assumption. Under severe drift, ESS collapses at later looks but remains inflated at early looks where limited data cannot yet detect the conflict."
+#| fig-width: 8
+#| fig-height: 5
+
+par(mar = c(5.5, 4.5, 2.5, 1))
+
+plot(NULL, xlim = c(0.8, 3.2), ylim = c(0, 100),
+     xlab = "", ylab = "Effective Sample Size (Prior Contribution)",
+     main = "Prior ESS Across Sequential Looks",
+     xaxt = "n", las = 1, cex.lab = 1.1)
+axis(1, at = 1:3, labels = paste0("Look ", 1:3, "\n(n=", n_looks, ")"), padj = 0.5)
+mtext("Interim Look", side = 1, line = 4.2, cex = 1.1)
+
+abline(h = design_ess, lty = 2, col = "gray50")
+text(1.1, design_ess + 2.5, paste0("Design ESS = ", round(design_ess, 1)),
+     col = "gray50", cex = 0.8, adj = 0)
+
+for (s in seq_along(p_scenarios)) {
+  lines(1:3, ess_summary[s, , 1], col = cols[s], lwd = 2.5, type = "b", pch = 16)
+  for (k in 1:3) {
+    segments(k, ess_summary[s, k, 2], k, ess_summary[s, k, 3],
+             col = adjustcolor(cols[s], 0.4), lwd = 4)
+  }
+}
+
+legend(1.2, 35, legend = scenario_labels[c(4, 3, 2, 1, 5, 6)],
+       col = cols[c(4, 3, 2, 1, 5, 6)], lwd = 2, pch = 16, cex = 0.7, bty = "n")
+```
+
+**Key observation.** At Look 1 ($n = 30$), even severe conflict (true $p = 0.15$ vs. historical $p = 0.30$) leaves the median weight at `r round(weight_summary[4, 1, 1], 2)`. The dynamic mechanism has not yet "seen" enough data to discount. By Look 3 ($n = 90$), the weight drops to `r round(weight_summary[4, 3, 1], 2)`. This means the effective prior shifts mid-trial---a fact invisible to any analysis that evaluates the prior in isolation.
+
+## 2. ESS Is a Random Variable, Not a Design Constant
+
+Section V.E recommends effective sample size as the primary metric for quantifying prior influence. Sample size calculations use this ESS. But under dynamic borrowing, the realized ESS depends on the data. A sponsor who designs assuming $\text{ESS} = `r round(design_ess, 0)`$ (the expected value at the initial weight) may encounter a very different ESS at analysis.
+
+```{r}
+#| label: fig-ess-distributions
+#| fig-cap: "Distribution of realized ESS from the prior at the final analysis (n = 90), across 50,000 simulations. The dashed line marks the design-stage ESS. Under severe drift, the distribution is bimodal: the mixture either detects conflict and collapses to near-zero ESS, or the data is ambiguous enough that borrowing persists."
+#| fig-width: 8
+#| fig-height: 5
+
+nsim_ess <- 50000
+drift_scenarios <- c(0.30, 0.25, 0.20, 0.15)
+drift_labels <- c("No drift (p = 0.30)", "Mild (p = 0.25)",
+                    "Moderate (p = 0.20)", "Severe (p = 0.15)")
+
+ess_at_final <- matrix(NA, nsim_ess, length(drift_scenarios))
+for (s in seq_along(drift_scenarios)) {
+  y_final <- rbinom(nsim_ess, n_max, drift_scenarios[s])
+  post <- mixture_posterior(y_final, n_max, a_info, b_info, a_weak, b_weak, w_init)
+  ess_at_final[, s] <- post$ess
+}
+
+par(mar = c(4.5, 4.5, 2.5, 1))
+ess_cols <- c("#2166AC", "#4393C3", "#D6604D", "#B2182B")
+
+plot(NULL, xlim = c(0, 110), ylim = c(0, 0.20),
+     xlab = "Effective Sample Size (Prior Contribution)",
+     ylab = "Density", main = "Distribution of Realized ESS at Final Analysis (n = 90)", las = 1)
+
+for (s in seq_along(drift_scenarios)) {
+  d <- density(ess_at_final[, s], from = 0, to = 110, bw = 2)
+  polygon(d$x, d$y, col = adjustcolor(ess_cols[s], 0.2), border = ess_cols[s], lwd = 2)
+}
+
+abline(v = design_ess, lty = 2, col = "gray30", lwd = 1.5)
+text(design_ess + 1.5, 0.19, paste0("Design ESS = ", round(design_ess, 0)),
+     cex = 0.8, adj = 0, col = "gray30")
+
+legend(1, 0.2, bty = "n", cex = 0.8,
+       legend = drift_labels, fill = adjustcolor(ess_cols, 0.3), border = ess_cols)
+```
+
+```{r}
+#| label: tbl-ess-summary
+
+ess_tbl <- data.frame(
+  Scenario = drift_labels,
+  `Median ESS` = sapply(1:4, function(s) round(median(ess_at_final[, s]), 1)),
+  `IQR` = sapply(1:4, function(s) {
+    q <- quantile(ess_at_final[, s], c(0.25, 0.75))
+    paste0("[", round(q[1], 1), ", ", round(q[2], 1), "]")
+  }),
+  `Pr(ESS < 20)` = sapply(1:4, function(s) round(mean(ess_at_final[, s] < 20), 3)),
+  check.names = FALSE
+)
+knitr::kable(ess_tbl, caption = "Realized ESS from prior at final analysis across drift scenarios.")
+```
+
+Under severe drift, the median ESS is `r round(median(ess_at_final[,4]), 0)`---nearly half the design value---and `r round(100 * mean(ess_at_final[,4] < 20), 0)`% of simulations produce ESS below 20. A sample size calculated assuming ESS = `r round(design_ess, 0)` is based on a quantity that may not materialize.
+
+## 3. Alpha Spending Redistribution: The Core Interaction
+
+This is the central finding. When we combine sequential monitoring with dynamic borrowing, the amount of Type I error "spent" at each interim look changes---because the effective prior at each look is different.
+
+We calibrate the sequential design two ways:
+
+- **Composed calibration**: simulate the dynamic mixture prior *and* the sequential stops together. Find threshold $c$ such that overall $\alpha \leq 0.025$.
+- **Component calibration**: assume the borrowing weight is fixed at $w_0 = 0.70$ throughout. Find threshold $c$ for the sequential design under that fixed prior.
+
+Then we examine what happens when the component-calibrated threshold is applied to the trial that actually uses dynamic borrowing.
+
+```{r}
+#| label: calibration
+#| code-fold: false
+
+# Simulate sequential trial with specified borrowing behavior
+simulate_sequential <- function(nsim, p_true, n_looks, threshold,
+                                 a1, b1, a0, b0, w0, p_null, dynamic = TRUE) {
+  rejected <- logical(nsim)
+  stopped <- logical(nsim)
+
+  for (k in seq_along(n_looks)) {
+    active <- !stopped
+    n_active <- sum(active)
+    if (n_active == 0) break
+
+    y_cum <- rbinom(n_active, n_looks[k], p_true)
+
+    if (dynamic) {
+      post <- mixture_posterior(y_cum, n_looks[k], a1, b1, a0, b0, w0)
+    } else {
+      post <- list(w_post = rep(w0, n_active),
+                   a1_post = a1 + y_cum, b1_post = b1 + n_looks[k] - y_cum,
+                   a0_post = a0 + y_cum, b0_post = b0 + n_looks[k] - y_cum)
+    }
+
+    pp <- post_prob_gt(p_null, post)
+    declare <- pp > threshold
+    rejected[which(active)[declare]] <- TRUE
+    stopped[which(active)[declare]] <- TRUE
+  }
+  rejected
+}
+
+nsim <- 100000
+
+# Calibrate: dynamic prior + sequential
+threshold_grid <- seq(0.955, 0.999, by = 0.001)
+alpha_dynamic <- sapply(threshold_grid, function(c) {
+  mean(simulate_sequential(nsim, p_null, n_looks, c,
+    a_info, b_info, a_weak, b_weak, w_init, p_null, dynamic = TRUE))
+})
+best_dynamic <- threshold_grid[which.min(abs(alpha_dynamic - 0.025))]
+
+# Calibrate: static prior + sequential
+alpha_static <- sapply(threshold_grid, function(c) {
+  mean(simulate_sequential(nsim, p_null, n_looks, c,
+    a_info, b_info, a_weak, b_weak, w_init, p_null, dynamic = FALSE))
+})
+best_static <- threshold_grid[which.min(abs(alpha_static - 0.025))]
+
+cat(sprintf("Composed-calibrated threshold:  c = %.3f\n", best_dynamic))
+cat(sprintf("Component-calibrated threshold: c = %.3f\n", best_static))
+```
+
+```{r}
+#| label: fig-alpha-spending
+#| fig-cap: "Type I error spent at each sequential look under the null (p = 0.30). The dynamic prior front-loads alpha spending at Look 1 because early data consistent with the historical rate *increases* borrowing, making the prior more informative than the component-level calibration assumed. The component-level analysis (light blue) barely spends alpha at Look 1 because the static prior is less aggressive."
+#| fig-width: 8
+#| fig-height: 5
+
+# Compute alpha by look for each approach
+compute_alpha_by_look <- function(nsim, p_true, n_looks, threshold,
+                                   a1, b1, a0, b0, w0, p_null, dynamic) {
+  alpha_per_look <- numeric(length(n_looks))
+  stopped <- logical(nsim)
+
+  for (k in seq_along(n_looks)) {
+    active <- !stopped
+    n_active <- sum(active)
+    if (n_active == 0) break
+    y_cum <- rbinom(n_active, n_looks[k], p_true)
+
+    if (dynamic) {
+      post <- mixture_posterior(y_cum, n_looks[k], a1, b1, a0, b0, w0)
+    } else {
+      post <- list(w_post = rep(w0, n_active),
+                   a1_post = a1 + y_cum, b1_post = b1 + n_looks[k] - y_cum,
+                   a0_post = a0 + y_cum, b0_post = b0 + n_looks[k] - y_cum)
+    }
+
+    pp <- post_prob_gt(p_null, post)
+    declare <- pp > threshold
+    alpha_per_look[k] <- sum(declare) / nsim
+    stopped[which(active)[declare]] <- TRUE
+  }
+  alpha_per_look
+}
+
+a_composed  <- compute_alpha_by_look(nsim, p_null, n_looks, best_dynamic,
+                  a_info, b_info, a_weak, b_weak, w_init, p_null, dynamic = TRUE)
+a_mismatch  <- compute_alpha_by_look(nsim, p_null, n_looks, best_static,
+                  a_info, b_info, a_weak, b_weak, w_init, p_null, dynamic = TRUE)
+a_component <- compute_alpha_by_look(nsim, p_null, n_looks, best_static,
+                  a_info, b_info, a_weak, b_weak, w_init, p_null, dynamic = FALSE)
+
+par(mar = c(6.5, 4.5, 3, 1))
+bar_data <- rbind(a_composed, a_mismatch, a_component)
+bar_cols <- c("#2166AC", "#D6604D", "#4393C3")
+
+bp <- barplot(bar_data, beside = TRUE, col = bar_cols,
+  names.arg = paste0("Look ", 1:3, " (n=", n_looks, ")"),
+  ylab = expression("Type I Error (" * alpha * " spent)"),
+  main = expression("Alpha Spending by Interim Look Under " * H[0]),
+  las = 1, ylim = c(0, max(bar_data) * 1.5), border = NA)
+
+for (i in 1:nrow(bar_data)) { 
+  text(bp[i,], bar_data[i,] + max(bar_data) * 0.05,
+       formatC(bar_data[i,], format = "f", digits = 4), cex = 0.7, col = bar_cols[i])
+}
+
+legend("topleft", bty = "n", cex = 0.7,
+  legend = c(
+    paste0("Composed: dynamic prior + composed threshold (c = ", best_dynamic, ")"),
+    paste0("Mismatch: dynamic prior + component threshold (c = ", best_static, ")"),
+    paste0("Component: static prior + component threshold (c = ", best_static, ")")),
+  fill = bar_cols, border = NA)
+
+mtext(paste0("Totals \u2014 Composed: ", formatC(sum(a_composed), format = "f", digits = 4),
+             "    Mismatch: ", formatC(sum(a_mismatch), format = "f", digits = 4),
+             "    Component: ", formatC(sum(a_component), format = "f", digits = 4)),
+      side = 1, line = 3, cex = 0.75)
+```
+
+**What the figure shows.** At Look 1 ($n = 30$), the dynamic prior spends `r formatC(a_composed[1], format = "f", digits = 4)` in alpha---more than 10× what the component-level calibration spends (`r formatC(a_component[1], format = "f", digits = 4)`). This happens because under the null ($p = 0.30$, consistent with historical data), the dynamic mechanism *increases* the weight on the informative component beyond the initial 70%, making the prior more aggressive at early looks than the static calibration assumed.
+
+The mismatch scenario (red bars) shows the practical consequence: a sponsor who calibrates their threshold assuming fixed borrowing weight, then deploys the trial with dynamic borrowing, gets a different alpha-spending pattern than they designed.
+
+## 4. Operating Characteristic Curves
+
+The calibration difference translates directly into divergent operating characteristic curves.
+
+```{r}
+#| label: fig-oc-curves
+#| fig-cap: "Probability of declaring efficacy across the full range of true response rates. The composed and component calibrations produce visibly different OC curves, particularly in the power region (p > 0.35). The mismatch curve (dashed red) departs from both."
+#| fig-width: 8
+#| fig-height: 5.5
+
+p_grid <- seq(0.10, 0.60, by = 0.02)
+rej_composed <- rej_mismatch <- rej_component <- numeric(length(p_grid))
+
+for (i in seq_along(p_grid)) {
+  rej_composed[i]  <- mean(simulate_sequential(nsim, p_grid[i], n_looks, best_dynamic,
+    a_info, b_info, a_weak, b_weak, w_init, p_null, dynamic = TRUE))
+  rej_mismatch[i]  <- mean(simulate_sequential(nsim, p_grid[i], n_looks, best_static,
+    a_info, b_info, a_weak, b_weak, w_init, p_null, dynamic = TRUE))
+  rej_component[i] <- mean(simulate_sequential(nsim, p_grid[i], n_looks, best_static,
+    a_info, b_info, a_weak, b_weak, w_init, p_null, dynamic = FALSE))
+}
+
+par(mar = c(4.5, 4.5, 3, 1))
+plot(p_grid, rej_component, type = "l", lwd = 2.5, col = "#4393C3",
+     ylim = c(0, 1), xlab = "True Response Rate",
+     ylab = "Probability of Declaring Efficacy",
+     main = "Operating Characteristics: Composed vs. Component Calibration", las = 1)
+lines(p_grid, rej_mismatch, lwd = 2.5, col = "#D6604D", lty = 2)
+lines(p_grid, rej_composed, lwd = 2.5, col = "#2166AC")
+
+abline(v = p_null, lty = 3, col = "gray50")
+abline(h = 0.025, lty = 3, col = "gray50")
+abline(h = 0.80, lty = 3, col = "gray70")
+
+text(p_null + 0.05, 0.10, expression(H[0]), cex = 0.9)
+text(0.12, 0.045, expression(alpha == 0.025), cex = 0.8, col = "gray50")
+
+legend("topleft", bty = "n", cex = 0.8,
+  legend = c(
+    paste0("Composed (c = ", best_dynamic, ")"),
+    paste0("Mismatch (c = ", best_static, " with dynamic prior)"),
+    paste0("Component (c = ", best_static, " with static prior)")),
+  col = c("#2166AC", "#D6604D", "#4393C3"), lwd = 2.5, lty = c(1, 2, 1))
+```
+
+## 5. Power Under Null Drift
+
+A final practical scenario: what happens to power when the population's true baseline rate has drifted from the historical value? The dynamic prior will detect this drift and reduce borrowing---which is desirable for controlling bias but costs power that the original sample size calculation assumed.
+
+```{r}
+#| label: fig-power-drift
+#| fig-cap: "Power to detect efficacy when the null landscape has drifted from the historical rate. Solid lines: composed (dynamic) design. Dashed lines: component (static) calibration. Under null drift, the dynamic design loses power because it correctly reduces borrowing---but the sample size was calculated under the assumption that borrowing would be maintained."
+#| fig-width: 8
+#| fig-height: 5.5
+
+p_alt_grid <- seq(0.30, 0.60, by = 0.02)
+drift_nulls <- c(0.30, 0.25, 0.20)
+drift_cols <- c("#2166AC", "#D6604D", "#B2182B")
+drift_null_labels <- c("Null = 0.30 (designed)", "Null = 0.25 (drift)",
+                        "Null = 0.20 (drift)")
+
+power_dyn <- power_stat <- matrix(NA, length(p_alt_grid), length(drift_nulls))
+
+for (d in seq_along(drift_nulls)) {
+  for (i in seq_along(p_alt_grid)) {
+    power_dyn[i, d] <- mean(simulate_sequential(nsim, p_alt_grid[i], n_looks, best_dynamic,
+      a_info, b_info, a_weak, b_weak, w_init, drift_nulls[d], dynamic = TRUE))
+    power_stat[i, d] <- mean(simulate_sequential(nsim, p_alt_grid[i], n_looks, best_static,
+      a_info, b_info, a_weak, b_weak, w_init, drift_nulls[d], dynamic = FALSE))
+  }
+}
+
+par(mar = c(4.5, 4.5, 3, 1))
+plot(NULL, xlim = range(p_alt_grid), ylim = c(0, 1),
+     xlab = "True Response Rate", ylab = "Power", las = 1,
+     main = "Power Under Null Drift: Composed vs. Component Calibration")
+
+# Solid lines (dynamic) first as background
+for (d in seq_along(drift_nulls)) {
+  lines(p_alt_grid, power_dyn[, d], col = drift_cols[d], lwd = 2.5)
+}
+
+# Dashed lines (static) on top so they are visible
+for (d in seq_along(drift_nulls)) {
+  lines(p_alt_grid, power_stat[, d], col = drift_cols[d], lwd = 2.5, lty = 3)
+}
+
+abline(h = 0.80, lty = 3, col = "gray60")
+text(0.59, 0.83, "80%", cex = 0.75, col = "gray50")
+
+legend(0.5, 0.35, bty = "n", cex = 0.7,
+  legend = c(drift_null_labels, "",
+             paste0(drift_null_labels, " (static)")),
+  col = c(drift_cols, NA, drift_cols),
+  lwd = c(rep(2.5, 3), NA, rep(2.5, 3)),
+  lty = c(rep(1, 3), NA, rep(3, 3)),
+  title = "Solid = dynamic, dotted = static")
+```
+
+## Implications for the Final Guidance
+
+These simulations demonstrate three concrete interactions between design components the guidance currently addresses in separate sections:
+
+1. **Borrowing weight is not constant across interims** (Section V.D.4 × Section IV.A.4). A dynamic mixture prior changes its effective contribution at each sequential look. Stopping boundaries calibrated under a fixed-prior assumption produce a different alpha-spending pattern than what actually occurs.
+
+2. **ESS at design ≠ ESS at analysis** (Section V.E × Section IV.B). Under dynamic borrowing, the realized ESS is a random variable with substantial variance under drift scenarios. Sample size calculations that treat ESS as a constant may be underpowered when borrowing is reduced.
+
+3. **Component-level calibration ≠ composed calibration** (Section IV.B generally). Operating characteristics evaluated separately for the prior (ESS, conflict handling) and for the stopping rule (alpha spending, power) do not recover the operating characteristics of the composed design.
+
+The recommendation from Comment 3 follows directly: the simulation grid in Section VIII should require scenarios that vary prior-data conflict jointly with interim analysis timing, so that these interactions are visible in the documentation sponsors provide to FDA reviewers.
+
+## Reproducibility
+
+- All computations use Beta-Binomial conjugacy (closed-form).
+- `set.seed(20260307)` for full reproducibility.
+- `r format(nsim, big.mark = ",")` simulations per scenario.
+- No external packages required beyond base R.
+
+::: {.callout-note}
+## Computational tools
+The [Zetyra Bayesian Toolkit](https://zetyra.com/calculators/bayesian-toolkit) implements these mixture prior computations, sequential monitoring calibration, and ESS evaluation in browser-based calculators with validated R/Python engines. Validation code: [github.com/evidenceinthewild/zetyra-validation](https://github.com/evidenceinthewild/zetyra-validation).
+:::
