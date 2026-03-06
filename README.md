@@ -85,12 +85,13 @@ Phase III oncology trials average **$50-100M** and take **4-6 years** to complet
 - **Survival Analysis** - Time-to-event sample sizing via Schoenfeld, Freedman, and Lakatos formulas
 - **Sample Size Re-estimation** - Blinded and unblinded adaptive designs with promising zone methodology
 
-**Bayesian Toolkit** (5 calculators, add-on aligned with FDA January 2026 draft guidance):
+**Bayesian Toolkit** (6 calculators, add-on aligned with FDA January 2026 draft guidance):
 
 - **Prior Elicitation** - Quantile matching, ESS-based, and historical data methods
 - **External Data Borrowing** - MAP prior, power prior, and commensurate prior approaches
 - **One-Arm & Two-Arm Design** - Bayesian sample sizing for binary and continuous endpoints
 - **Sequential Monitoring** - Bayesian interim analysis with posterior probability stopping rules
+- **Predictive Power (PPoS)** - Probability of trial success given interim data for decision guidance at planned or ad-hoc interim analyses
 
 **Features:** Free tier with basic calculators, pro tier with advanced frequentist calculators + project management and PDF export, Bayesian Toolkit available as add-on
 
