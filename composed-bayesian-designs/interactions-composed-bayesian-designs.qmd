@@ -40,7 +40,10 @@ set.seed(20260307)
 # ---------------------------------------------------------------------------
 
 #' Prior: w0 * Beta(a1, b1) + (1-w0) * Beta(a0, b0)
-#' Returns posterior weight, ESS, and component parameters
+#' Returns posterior weight, mixture-weighted prior ESS, and component parameters.
+#' ESS here is the posterior-weighted average of component prior sample sizes:
+#'   w_post*(a1+b1) + (1-w_post)*(a0+b0)
+#' This is one reasonable ESS proxy for illustration; other definitions exist.
 mixture_posterior <- function(y, n, a1, b1, a0, b0, w0) {
   log_m1 <- lbeta(a1 + y, b1 + n - y) - lbeta(a1, b1)
   log_m0 <- lbeta(a0 + y, b0 + n - y) - lbeta(a0, b0)
@@ -97,7 +100,7 @@ cat(sprintf("Sequential looks at n = %s\n", paste(n_looks, collapse = ", ")))
 
 The guidance treats prior specification (Section V.D) and sequential monitoring (Section IV.A.4) as separate concerns. But when a dynamic mixture prior updates its component weights based on accumulating data, the effective prior at each interim look is different. Early looks---with less data to detect conflict---tend to preserve the informative component's weight. Later looks may reduce it substantially.
 
-This means the prior that governs the interim decision at Look 1 is not the same prior that governs the decision at Look 3. Any stopping boundary calibrated under the assumption of a fixed prior is operating under a false premise.
+This means the effective posterior borrowing state---the mixture weight realized after updating on the accrued data---is different at Look 1 than at Look 3. The pre-data prior is the same throughout, but the data-updated mixture that actually governs each interim decision shifts across looks. Any stopping boundary calibrated under the assumption of a fixed borrowing weight is operating under a false premise.
 
 ```{r}
 #| label: fig-weight-trajectories
@@ -115,8 +118,11 @@ weight_summary <- array(NA, dim = c(length(p_scenarios), 3, 3))
 ess_summary <- array(NA, dim = c(length(p_scenarios), 3, 3))
 
 for (s in seq_along(p_scenarios)) {
+  # Pre-generate patient-level data for coherent paths across looks
+  patient_outcomes <- matrix(rbinom(nsim_traj * n_max, 1, p_scenarios[s]),
+                             nrow = nsim_traj, ncol = n_max)
   for (k in seq_along(n_looks)) {
-    y_cum <- rbinom(nsim_traj, n_looks[k], p_scenarios[s])
+    y_cum <- rowSums(patient_outcomes[, 1:n_looks[k], drop = FALSE])
     post <- mixture_posterior(y_cum, n_looks[k], a_info, b_info, a_weak, b_weak, w_init)
     weight_summary[s, k, ] <- quantile(post$w_post, c(0.5, 0.25, 0.75))
     ess_summary[s, k, ] <- quantile(post$ess, c(0.5, 0.25, 0.75))
@@ -157,7 +163,7 @@ The same dynamic applies to effective sample size. Under no conflict, the realiz
 par(mar = c(5.5, 4.5, 2.5, 1))
 
 plot(NULL, xlim = c(0.8, 3.2), ylim = c(0, 100),
-     xlab = "", ylab = "Effective Sample Size (Prior Contribution)",
+     xlab = "", ylab = "Mixture-Weighted Prior ESS",
      main = "Prior ESS Across Sequential Looks",
      xaxt = "n", las = 1, cex.lab = 1.1)
 axis(1, at = 1:3, labels = paste0("Look ", 1:3, "\n(n=", n_looks, ")"), padj = 0.5)
@@ -183,7 +189,7 @@ legend(1.2, 35, legend = scenario_labels[c(4, 3, 2, 1, 5, 6)],
 
 ## 2. ESS Is a Random Variable, Not a Design Constant
 
-Section V.E recommends effective sample size as the primary metric for quantifying prior influence. Sample size calculations use this ESS. But under dynamic borrowing, the realized ESS depends on the data. A sponsor who designs assuming $\text{ESS} = `r round(design_ess, 0)`$ (the expected value at the initial weight) may encounter a very different ESS at analysis.
+Section V.E recommends effective sample size as the primary metric for quantifying prior influence. Sample size calculations use this ESS. Throughout this supplement, we define ESS as the *mixture-weighted prior ESS*: $\text{ESS} = w_{\text{post}}(a_1 + b_1) + (1 - w_{\text{post}})(a_0 + b_0)$, the posterior-weighted average of the two component prior sample sizes. This is a reasonable working proxy for the prior's effective contribution in this conjugate setting, though other ESS definitions exist for dynamic borrowing (e.g., based on posterior variance or predictive matching). Under dynamic borrowing, whatever ESS definition is used, the realized ESS depends on the data. A sponsor who designs assuming $\text{ESS} = `r round(design_ess, 0)`$ (the value at the initial weight) may encounter a very different ESS at analysis.
 
 ```{r}
 #| label: fig-ess-distributions
@@ -256,18 +262,30 @@ Then we examine what happens when the component-calibrated threshold is applied 
 #| label: calibration
 #| code-fold: false
 
-# Simulate sequential trial with specified borrowing behavior
+# Simulate sequential trial with specified borrowing behavior.
+# Patient-level data is generated once and accumulated across looks
+# so that cumulative counts evolve coherently within each trial path.
 simulate_sequential <- function(nsim, p_true, n_looks, threshold,
                                  a1, b1, a0, b0, w0, p_null, dynamic = TRUE) {
   rejected <- logical(nsim)
   stopped <- logical(nsim)
+
+  # Pre-generate all patient outcomes (one column per patient)
+  n_max <- max(n_looks)
+  patient_outcomes <- matrix(rbinom(nsim * n_max, 1, p_true), nrow = nsim, ncol = n_max)
+
+  # Cumulative responders at each look
+  y_cum_all <- matrix(NA_real_, nrow = nsim, ncol = length(n_looks))
+  for (k in seq_along(n_looks)) {
+    y_cum_all[, k] <- rowSums(patient_outcomes[, 1:n_looks[k], drop = FALSE])
+  }
 
   for (k in seq_along(n_looks)) {
     active <- !stopped
     n_active <- sum(active)
     if (n_active == 0) break
 
-    y_cum <- rbinom(n_active, n_looks[k], p_true)
+    y_cum <- y_cum_all[active, k]
 
     if (dynamic) {
       post <- mixture_posterior(y_cum, n_looks[k], a1, b1, a0, b0, w0)
@@ -287,28 +305,50 @@ simulate_sequential <- function(nsim, p_true, n_looks, threshold,
 
 nsim <- 100000
 
-# Calibrate: dynamic prior + sequential
-threshold_grid <- seq(0.955, 0.999, by = 0.001)
-alpha_dynamic <- sapply(threshold_grid, function(c) {
-  mean(simulate_sequential(nsim, p_null, n_looks, c,
-    a_info, b_info, a_weak, b_weak, w_init, p_null, dynamic = TRUE))
-})
-best_dynamic <- threshold_grid[which.min(abs(alpha_dynamic - 0.025))]
+# Two-stage calibration: coarse grid, then fine grid around best candidate.
+calibrate_threshold <- function(nsim, p_null, n_looks, a1, b1, a0, b0, w0,
+                                 dynamic, alpha_target = 0.025) {
+  # Stage 1: coarse grid
+  grid1 <- seq(0.955, 0.999, by = 0.001)
+  alpha1 <- sapply(grid1, function(c) {
+    mean(simulate_sequential(nsim, p_null, n_looks, c,
+      a1, b1, a0, b0, w0, p_null, dynamic = dynamic))
+  })
+  best1 <- grid1[which.min(abs(alpha1 - alpha_target))]
 
-# Calibrate: static prior + sequential
-alpha_static <- sapply(threshold_grid, function(c) {
-  mean(simulate_sequential(nsim, p_null, n_looks, c,
-    a_info, b_info, a_weak, b_weak, w_init, p_null, dynamic = FALSE))
-})
-best_static <- threshold_grid[which.min(abs(alpha_static - 0.025))]
+  # Stage 2: fine grid around coarse best
+  grid2 <- seq(max(best1 - 0.002, 0.950), min(best1 + 0.002, 0.9999), by = 0.0002)
+  alpha2 <- sapply(grid2, function(c) {
+    mean(simulate_sequential(nsim, p_null, n_looks, c,
+      a1, b1, a0, b0, w0, p_null, dynamic = dynamic))
+  })
+  best2 <- grid2[which.min(abs(alpha2 - alpha_target))]
 
-cat(sprintf("Composed-calibrated threshold:  c = %.3f\n", best_dynamic))
-cat(sprintf("Component-calibrated threshold: c = %.3f\n", best_static))
+  # Stage 3: independent verification on fresh samples to avoid selection bias
+  verified <- mean(simulate_sequential(nsim, p_null, n_looks, best2,
+    a1, b1, a0, b0, w0, p_null, dynamic = dynamic))
+  mc_se <- sqrt(verified * (1 - verified) / nsim)
+
+  list(threshold = best2, alpha = verified, mc_se = mc_se)
+}
+
+calib_dynamic <- calibrate_threshold(nsim, p_null, n_looks,
+  a_info, b_info, a_weak, b_weak, w_init, dynamic = TRUE)
+best_dynamic <- calib_dynamic$threshold
+
+calib_static <- calibrate_threshold(nsim, p_null, n_looks,
+  a_info, b_info, a_weak, b_weak, w_init, dynamic = FALSE)
+best_static <- calib_static$threshold
+
+cat(sprintf("Composed-calibrated threshold:  c = %.4f (verified alpha = %.4f ± %.4f)\n",
+            best_dynamic, calib_dynamic$alpha, calib_dynamic$mc_se))
+cat(sprintf("Component-calibrated threshold: c = %.4f (verified alpha = %.4f ± %.4f)\n",
+            best_static, calib_static$alpha, calib_static$mc_se))
 ```
 
 ```{r}
 #| label: fig-alpha-spending
-#| fig-cap: "Type I error spent at each sequential look under the null (p = 0.30). The dynamic prior front-loads alpha spending at Look 1 because early data consistent with the historical rate *increases* borrowing, making the prior more informative than the component-level calibration assumed. The component-level analysis (light blue) barely spends alpha at Look 1 because the static prior is less aggressive."
+#| fig-cap: "Type I error spent at each sequential look under the null (p = 0.30). In this design and null configuration, the dynamic prior front-loads alpha spending at Look 1 because early data consistent with the historical rate *increases* borrowing, making the prior more informative than the component-level calibration assumed. The component-level analysis (light blue) barely spends alpha at Look 1 because the static prior is less aggressive."
 #| fig-width: 8
 #| fig-height: 5
 
@@ -318,11 +358,19 @@ compute_alpha_by_look <- function(nsim, p_true, n_looks, threshold,
   alpha_per_look <- numeric(length(n_looks))
   stopped <- logical(nsim)
 
+  # Pre-generate coherent patient-level data
+  n_max <- max(n_looks)
+  patient_outcomes <- matrix(rbinom(nsim * n_max, 1, p_true), nrow = nsim, ncol = n_max)
+  y_cum_all <- matrix(NA_real_, nrow = nsim, ncol = length(n_looks))
+  for (k in seq_along(n_looks)) {
+    y_cum_all[, k] <- rowSums(patient_outcomes[, 1:n_looks[k], drop = FALSE])
+  }
+
   for (k in seq_along(n_looks)) {
     active <- !stopped
     n_active <- sum(active)
     if (n_active == 0) break
-    y_cum <- rbinom(n_active, n_looks[k], p_true)
+    y_cum <- y_cum_all[active, k]
 
     if (dynamic) {
       post <- mixture_posterior(y_cum, n_looks[k], a1, b1, a0, b0, w0)
@@ -364,9 +412,9 @@ for (i in 1:nrow(bar_data)) {
 
 legend("topleft", bty = "n", cex = 0.7,
   legend = c(
-    paste0("Composed: dynamic prior + composed threshold (c = ", best_dynamic, ")"),
-    paste0("Mismatch: dynamic prior + component threshold (c = ", best_static, ")"),
-    paste0("Component: static prior + component threshold (c = ", best_static, ")")),
+    paste0("Composed: dynamic prior + composed threshold (c = ", formatC(best_dynamic, format = "f", digits = 4), ")"),
+    paste0("Mismatch: dynamic prior + component threshold (c = ", formatC(best_static, format = "f", digits = 4), ")"),
+    paste0("Component: static prior + component threshold (c = ", formatC(best_static, format = "f", digits = 4), ")")),
   fill = bar_cols, border = NA)
 
 mtext(paste0("Totals \u2014 Composed: ", formatC(sum(a_composed), format = "f", digits = 4),
@@ -375,7 +423,7 @@ mtext(paste0("Totals \u2014 Composed: ", formatC(sum(a_composed), format = "f", 
       side = 1, line = 3, cex = 0.75)
 ```
 
-**What the figure shows.** At Look 1 ($n = 30$), the dynamic prior spends `r formatC(a_composed[1], format = "f", digits = 4)` in alpha---more than 10× what the component-level calibration spends (`r formatC(a_component[1], format = "f", digits = 4)`). This happens because under the null ($p = 0.30$, consistent with historical data), the dynamic mechanism *increases* the weight on the informative component beyond the initial 70%, making the prior more aggressive at early looks than the static calibration assumed.
+**What the figure shows.** In this design under this null configuration, the dynamic prior spends `r formatC(a_composed[1], format = "f", digits = 4)` in alpha at Look 1 ($n = 30$)---substantially more than the component-level calibration spends (`r formatC(a_component[1], format = "f", digits = 4)`). This happens because under the null ($p = 0.30$, consistent with historical data), the dynamic mechanism *increases* the weight on the informative component beyond the initial 70%, making the prior more aggressive at early looks than the static calibration assumed. The direction and magnitude of this redistribution will depend on the specific prior, historical data, and look schedule.
 
 The mismatch scenario (red bars) shows the practical consequence: a sponsor who calibrates their threshold assuming fixed borrowing weight, then deploys the trial with dynamic borrowing, gets a different alpha-spending pattern than they designed.
 
@@ -418,15 +466,15 @@ text(0.12, 0.045, expression(alpha == 0.025), cex = 0.8, col = "gray50")
 
 legend("topleft", bty = "n", cex = 0.8,
   legend = c(
-    paste0("Composed (c = ", best_dynamic, ")"),
-    paste0("Mismatch (c = ", best_static, " with dynamic prior)"),
-    paste0("Component (c = ", best_static, " with static prior)")),
+    paste0("Composed (c = ", formatC(best_dynamic, format = "f", digits = 4), ")"),
+    paste0("Mismatch (c = ", formatC(best_static, format = "f", digits = 4), " with dynamic prior)"),
+    paste0("Component (c = ", formatC(best_static, format = "f", digits = 4), " with static prior)")),
   col = c("#2166AC", "#D6604D", "#4393C3"), lwd = 2.5, lty = c(1, 2, 1))
 ```
 
 ## 5. Power Under Null Drift
 
-A final practical scenario: what happens to power when the population's true baseline rate has drifted from the historical value? The dynamic prior will detect this drift and reduce borrowing---which is desirable for controlling bias but costs power that the original sample size calculation assumed.
+A final practical scenario: what happens to power when the population's true baseline rate has drifted from the historical value? Concretely, "null drift" here means that the reference rate used in the success criterion ($p_0$, the null hypothesis boundary) differs from the historical rate ($p_{\text{hist}} = 0.30$) that was used to construct the informative prior component. When the true baseline falls below the historical rate, the dynamic prior detects the discrepancy and reduces borrowing---which is desirable for controlling bias but costs power that the original sample size calculation assumed.
 
 ```{r}
 #| label: fig-power-drift

@@ -14,8 +14,11 @@ dir.create(fig_dir, showWarnings = FALSE)
 # HELPERS: Mixture prior posterior computations (Beta-Binomial conjugate)
 # ============================================================================
 
-#' Compute posterior mixture weight, posterior probability, and ESS
-#' for a two-component Beta mixture prior after observing y in n
+#' Compute posterior mixture weight, posterior probability, and mixture-weighted
+#' prior ESS for a two-component Beta mixture prior after observing y in n.
+#' ESS = w_post*(a1+b1) + (1-w_post)*(a0+b0): the posterior-weighted average
+#' of component prior sample sizes. This is one reasonable proxy; other
+#' ESS definitions exist for dynamic borrowing schemes.
 #'
 #' Prior: w0 * Beta(a1, b1) + (1-w0) * Beta(a0, b0)
 #' Posterior: w_post * Beta(a1+y, b1+n-y) + (1-w_post) * Beta(a0+y, b0+n-y)
@@ -108,9 +111,12 @@ for (s in seq_along(p_scenarios)) {
   weight_mat <- matrix(NA, nsim_traj, length(n_looks))
   ess_mat <- matrix(NA, nsim_traj, length(n_looks))
 
+  # Pre-generate patient-level data for coherent paths
+  patient_outcomes <- matrix(rbinom(nsim_traj * n_max, 1, p_true),
+                             nrow = nsim_traj, ncol = n_max)
+
   for (k in seq_along(n_looks)) {
-    # Generate cumulative data up to this look
-    y_cum <- rbinom(nsim_traj, n_looks[k], p_true)
+    y_cum <- rowSums(patient_outcomes[, 1:n_looks[k], drop = FALSE])
     post <- mixture_posterior(y_cum, n_looks[k], a_info, b_info, a_weak, b_weak, w_init)
     weight_mat[, k] <- post$w_post
     ess_mat[, k] <- post$ess
@@ -154,7 +160,7 @@ png(file.path(fig_dir, "fig2_ess_trajectories.png"), width = 900, height = 550, 
 par(mar = c(5.5, 4.5, 2.5, 1))
 
 plot(NULL, xlim = c(0.8, 3.2), ylim = c(0, 100),
-     xlab = "", ylab = "Effective Sample Size (Prior Contribution)",
+     xlab = "", ylab = "Mixture-Weighted Prior ESS",
      main = "Prior ESS Across Sequential Looks",
      xaxt = "n", las = 1, cex.lab = 1.1)
 axis(1, at = 1:3, labels = paste0("Look ", 1:3, "\n(n=", n_looks, ")"), padj = 0.5)
@@ -188,22 +194,28 @@ cat("\n=== Simulation 2: Calibration Gap ===\n")
 simulate_sequential <- function(nsim, p_true, n_looks, threshold,
                                  a1, b1, a0, b0, w0, p_null,
                                  dynamic = TRUE) {
-  n_looks_k <- length(n_looks)
   rejected <- logical(nsim)
-  stopped <- logical(nsim)  # track which sims have already stopped
+  stopped <- logical(nsim)
+
+  # Pre-generate patient-level outcomes for coherent path accumulation
+  n_max <- max(n_looks)
+  patient_outcomes <- matrix(rbinom(nsim * n_max, 1, p_true), nrow = nsim, ncol = n_max)
+
+  y_cum_all <- matrix(NA_real_, nrow = nsim, ncol = length(n_looks))
+  for (k in seq_along(n_looks)) {
+    y_cum_all[, k] <- rowSums(patient_outcomes[, 1:n_looks[k], drop = FALSE])
+  }
 
   for (k in seq_along(n_looks)) {
     active <- !stopped
     n_active <- sum(active)
     if (n_active == 0) break
 
-    # Generate cumulative data
-    y_cum <- rbinom(n_active, n_looks[k], p_true)
+    y_cum <- y_cum_all[active, k]
 
     if (dynamic) {
       post <- mixture_posterior(y_cum, n_looks[k], a1, b1, a0, b0, w0)
     } else {
-      # Static: fix weight at initial value throughout
       post <- list(
         w_post = rep(w0, n_active),
         a1_post = a1 + y_cum, b1_post = b1 + n_looks[k] - y_cum,
@@ -220,37 +232,48 @@ simulate_sequential <- function(nsim, p_true, n_looks, threshold,
   rejected
 }
 
-# Step 1: Calibrate threshold under null with DYNAMIC borrowing
-cat("  Calibrating threshold (dynamic)...\n")
-threshold_grid <- seq(0.96, 0.999, by = 0.001)
+# Two-stage calibration: coarse grid, then fine grid around best candidate
+calibrate_threshold <- function(nsim, p_null, n_looks, a1, b1, a0, b0, w0,
+                                 dynamic, alpha_target = 0.025) {
+  # Stage 1: coarse grid
+  grid1 <- seq(0.955, 0.999, by = 0.001)
+  alpha1 <- sapply(grid1, function(c) {
+    mean(simulate_sequential(nsim, p_null, n_looks, c,
+      a1, b1, a0, b0, w0, p_null, dynamic = dynamic))
+  })
+  best1 <- grid1[which.min(abs(alpha1 - alpha_target))]
+
+  # Stage 2: fine grid around coarse best
+  grid2 <- seq(max(best1 - 0.002, 0.950), min(best1 + 0.002, 0.9999), by = 0.0002)
+  alpha2 <- sapply(grid2, function(c) {
+    mean(simulate_sequential(nsim, p_null, n_looks, c,
+      a1, b1, a0, b0, w0, p_null, dynamic = dynamic))
+  })
+  best2 <- grid2[which.min(abs(alpha2 - alpha_target))]
+
+  # Stage 3: independent verification on fresh samples to avoid selection bias
+  verified <- mean(simulate_sequential(nsim, p_null, n_looks, best2,
+    a1, b1, a0, b0, w0, p_null, dynamic = dynamic))
+  mc_se <- sqrt(verified * (1 - verified) / nsim)
+
+  list(threshold = best2, alpha = verified, mc_se = mc_se)
+}
+
 alpha_target <- 0.025
 
-calib_results_dynamic <- numeric(length(threshold_grid))
-for (i in seq_along(threshold_grid)) {
-  rej <- simulate_sequential(nsim, p_null, n_looks, threshold_grid[i],
-                              a_info, b_info, a_weak, b_weak, w_init, p_null,
-                              dynamic = TRUE)
-  calib_results_dynamic[i] <- mean(rej)
-}
+cat("  Calibrating threshold (dynamic, two-stage)...\n")
+calib_dynamic <- calibrate_threshold(nsim, p_null, n_looks,
+  a_info, b_info, a_weak, b_weak, w_init, dynamic = TRUE)
+best_dynamic <- calib_dynamic$threshold
+cat(sprintf("  Dynamic-calibrated threshold: %.4f\n", best_dynamic))
+cat(sprintf("  Verified Type I error: %.4f ± %.4f\n", calib_dynamic$alpha, calib_dynamic$mc_se))
 
-# Find threshold closest to 0.025
-best_dynamic <- threshold_grid[which.min(abs(calib_results_dynamic - alpha_target))]
-cat("  Dynamic-calibrated threshold:", best_dynamic, "\n")
-cat("  Achieved Type I error:", calib_results_dynamic[which.min(abs(calib_results_dynamic - alpha_target))], "\n")
-
-# Step 2: Calibrate threshold under null with STATIC borrowing (fixed weight)
-cat("  Calibrating threshold (static)...\n")
-calib_results_static <- numeric(length(threshold_grid))
-for (i in seq_along(threshold_grid)) {
-  rej <- simulate_sequential(nsim, p_null, n_looks, threshold_grid[i],
-                              a_info, b_info, a_weak, b_weak, w_init, p_null,
-                              dynamic = FALSE)
-  calib_results_static[i] <- mean(rej)
-}
-
-best_static <- threshold_grid[which.min(abs(calib_results_static - alpha_target))]
-cat("  Static-calibrated threshold:", best_static, "\n")
-cat("  Achieved Type I error:", calib_results_static[which.min(abs(calib_results_static - alpha_target))], "\n")
+cat("  Calibrating threshold (static, two-stage)...\n")
+calib_static <- calibrate_threshold(nsim, p_null, n_looks,
+  a_info, b_info, a_weak, b_weak, w_init, dynamic = FALSE)
+best_static <- calib_static$threshold
+cat(sprintf("  Static-calibrated threshold: %.4f\n", best_static))
+cat(sprintf("  Verified Type I error: %.4f ± %.4f\n", calib_static$alpha, calib_static$mc_se))
 
 # Step 3: Cross-evaluate — use static-calibrated threshold with dynamic prior
 # This is what happens when a sponsor calibrates assuming fixed borrowing
@@ -300,9 +323,9 @@ text(0.12, alpha_target + 0.03, expression(alpha == 0.025), cex = 0.8, col = "gr
 
 legend("topleft", bty = "n", cex = 0.8,
        legend = c(
-         paste0("Composed: dynamic prior + dynamic threshold (c=", best_dynamic, ")"),
-         paste0("Mismatch: dynamic prior + static threshold (c=", best_static, ")"),
-         paste0("Component: static prior + static threshold (c=", best_static, ")")
+         paste0("Composed: dynamic prior + dynamic threshold (c=", formatC(best_dynamic, format = "f", digits = 4), ")"),
+         paste0("Mismatch: dynamic prior + static threshold (c=", formatC(best_static, format = "f", digits = 4), ")"),
+         paste0("Component: static prior + static threshold (c=", formatC(best_static, format = "f", digits = 4), ")")
        ),
        col = c("#2166AC", "#D6604D", "#4393C3"),
        lwd = 2.5, lty = c(1, 2, 1))
@@ -451,16 +474,23 @@ cat("\n=== Simulation 5: Alpha Spending by Look ===\n")
 
 compute_alpha_by_look <- function(nsim, p_true, n_looks, threshold,
                                    a1, b1, a0, b0, w0, p_null, dynamic) {
-  n_looks_k <- length(n_looks)
-  alpha_per_look <- numeric(n_looks_k)
+  alpha_per_look <- numeric(length(n_looks))
   stopped <- logical(nsim)
+
+  # Pre-generate coherent patient-level data
+  n_max <- max(n_looks)
+  patient_outcomes <- matrix(rbinom(nsim * n_max, 1, p_true), nrow = nsim, ncol = n_max)
+  y_cum_all <- matrix(NA_real_, nrow = nsim, ncol = length(n_looks))
+  for (k in seq_along(n_looks)) {
+    y_cum_all[, k] <- rowSums(patient_outcomes[, 1:n_looks[k], drop = FALSE])
+  }
 
   for (k in seq_along(n_looks)) {
     active <- !stopped
     n_active <- sum(active)
     if (n_active == 0) break
 
-    y_cum <- rbinom(n_active, n_looks[k], p_true)
+    y_cum <- y_cum_all[active, k]
 
     if (dynamic) {
       post <- mixture_posterior(y_cum, n_looks[k], a1, b1, a0, b0, w0)
@@ -475,7 +505,7 @@ compute_alpha_by_look <- function(nsim, p_true, n_looks, threshold,
     pp <- post_prob_gt(p_null, post)
     declare <- pp > threshold
 
-    alpha_per_look[k] <- sum(declare) / nsim  # proportion of ALL sims
+    alpha_per_look[k] <- sum(declare) / nsim
     stopped[which(active)[declare]] <- TRUE
   }
 
@@ -522,9 +552,9 @@ for (i in 1:nrow(bar_data)) {
 # Legend near Look 1 (topleft)
 legend("topleft", bty = "n", cex = 0.7,
        legend = c(
-         paste0("Composed: dynamic prior + dynamic threshold (c=", best_dynamic, ")"),
-         paste0("Mismatch: dynamic prior + static threshold (c=", best_static, ")"),
-         paste0("Component: static prior + static threshold (c=", best_static, ")")
+         paste0("Composed: dynamic prior + dynamic threshold (c=", formatC(best_dynamic, format = "f", digits = 4), ")"),
+         paste0("Mismatch: dynamic prior + static threshold (c=", formatC(best_static, format = "f", digits = 4), ")"),
+         paste0("Component: static prior + static threshold (c=", formatC(best_static, format = "f", digits = 4), ")")
        ),
        fill = bar_cols, border = NA)
 
@@ -542,7 +572,7 @@ cat("  Figure 6 saved.\n")
 cat("\n=== Summary Table ===\n")
 cat(sprintf("%-45s  %10s  %10s  %10s\n", "Metric", "Composed", "Mismatch", "Component"))
 cat(paste(rep("-", 80), collapse = ""), "\n")
-cat(sprintf("%-45s  %10s  %10s  %10s\n",
+cat(sprintf("%-45s  %10.4f  %10.4f  %10.4f\n",
             "Threshold (c)",
             best_dynamic, best_static, best_static))
 cat(sprintf("%-45s  %10.4f  %10.4f  %10.4f\n",
