@@ -1,0 +1,499 @@
+---
+title: "Priors Aren't the Problem — They're the Point"
+subtitle: "A simulation study on historical control borrowing in Bayesian clinical trials"
+author: "Maggie Qian"
+date: "2026-03-12"
+format:
+  html:
+    toc: true
+    toc-depth: 2
+    code-fold: true
+    code-tools: true
+    theme: cosmo
+    fig-width: 10
+    fig-height: 6
+    fig-dpi: 180
+  pdf:
+    toc: true
+    fig-width: 10
+    fig-height: 6
+execute:
+  echo: true
+  warning: false
+  message: false
+  cache: true
+---
+
+## Overview
+
+A common claim in Bayesian vs. Frequentist debates is that with an uninformative
+prior the two frameworks give identical answers — and therefore the prior doesn't
+matter. This is technically true in the limit, but it misses the point entirely.
+
+**The value of an informative prior on the control arm isn't that it changes
+your conclusion. It's that borrowing from historical control data lets you reach
+the same target power at a lower per-arm sample size — at a controlled,
+calibrated Type I error rate.**
+
+This simulation study uses a **historical control borrowing** setup: we place an
+informative Beta prior on the control arm only (encoding different amounts of
+historical data at the same prior mean), while keeping the treatment prior flat.
+This is a common and well-studied use case for informative priors in clinical
+trials, and one that FDA's January 2026 Bayesian guidance addresses directly.
+
+Three claims are examined:
+
+1. At a **fixed, calibrated Type I error**, borrowing historical control data
+   increases power for the same per-arm sample size
+2. **Prior misspecification** shifts operating tradeoffs: a pessimistic prior
+   is conservative and loses power; an optimistic prior requires stricter
+   calibration and may behave less robustly under prior–data conflict
+3. The **likelihood eventually dominates** any prior — the self-correcting
+   property of Bayesian updating
+
+---
+
+## Setup
+
+```{r setup}
+library(tidyverse)
+library(patchwork)
+
+set.seed(42)
+
+# ── Global parameters ────────────────────────────────────────────────────────
+TRUE_CTRL    <- 0.20
+TRUE_TRT     <- 0.35
+N_SIMS       <- 2000   # simulations per (prior, N) cell; increase to 5000-10000 for publication-quality smoothness
+N_SIMS_BANDS <- 500    # simulations for Part 3 convergence bands
+TARGET_ALPHA <- 0.05   # target one-sided Type I error for calibration
+N_SEQ        <- c(30, 50, 75, 100, 125, 150, 175, 200, 250, 300)
+
+# ── Theme ─────────────────────────────────────────────────────────────────────
+theme_eb <- function() {
+  theme_minimal(base_size = 12) +
+    theme(
+      plot.title       = element_text(face = "bold", size = 13),
+      plot.subtitle    = element_text(color = "grey40", size = 10),
+      plot.caption     = element_text(color = "grey50", size = 8.5),
+      panel.grid.minor = element_blank(),
+      legend.position  = "bottom",
+      legend.title     = element_blank()
+    )
+}
+
+prior_colors <- c(
+  "Minimal ESS Beta(1,4)" = "#9ecae1",
+  "Weak Beta(4,16)"       = "#4292c6",
+  "Strong Beta(10,40)"    = "#084594"
+)
+
+robust_colors <- c(
+  "Correct \u03bc=0.20"     = "#2ca25f",
+  "Pessimistic \u03bc=0.30" = "#de2d26",
+  "Optimistic \u03bc=0.08"  = "#f16913"
+)
+```
+
+---
+
+## Helper functions
+
+### Analytical posterior probability
+
+For two independent Beta posteriors, P(θ_t > θ_c) can be computed via
+one-dimensional numerical integration — no Monte Carlo noise in the inner loop.
+
+$$
+P(\theta_t > \theta_c \mid \text{data}) =
+\int_0^1 \bigl[1 - F_{\theta_t}(y)\bigr] \, f_{\theta_c}(y) \, dy
+$$
+
+where $F_{\theta_t}$ is the Beta CDF with posterior parameters
+$(a_t + s_t,\; b_t + n_t - s_t)$ and $f_{\theta_c}$ is the Beta density with
+$(a_c + s_c,\; b_c + n_c - s_c)$.
+
+```{r helpers}
+# Exact (deterministic) P(theta_t > theta_c) via numerical integration
+prob_beats_exact <- function(s_t, n_t, s_c, n_c, a_t, b_t, a_c, b_c) {
+  at <- a_t + s_t;  bt <- b_t + n_t - s_t
+  ac <- a_c + s_c;  bc <- b_c + n_c - s_c
+  integrate(
+    function(y) (1 - pbeta(y, at, bt)) * dbeta(y, ac, bc),
+    lower = 0, upper = 1, rel.tol = 1e-5
+  )$value
+}
+
+# Simulate N_SIMS P(trt > ctrl) values under a specified true_trt
+# (set true_trt = true_ctrl for H0 / calibration)
+simulate_probs <- function(a_c, b_c, n, n_sims,
+                            true_ctrl, true_trt,
+                            a_t = 1, b_t = 1) {
+  s_c <- rbinom(n_sims, n, true_ctrl)
+  s_t <- rbinom(n_sims, n, true_trt)
+  map_dbl(seq_len(n_sims), \(i)
+    prob_beats_exact(s_t[i], n, s_c[i], n, a_t, b_t, a_c, b_c)
+  )
+}
+```
+
+### Design calibration
+
+For each (prior, N), we find the threshold τ such that the empirical Type I error
+≈ `r TARGET_ALPHA` under H0. Power is then evaluated at that same τ.
+
+```{r calibrate}
+# Returns a named list: threshold, type1_error, power
+calibrated_design <- function(a_c, b_c, n, n_sims,
+                               true_ctrl, true_trt,
+                               target_alpha = TARGET_ALPHA,
+                               a_t = 1, b_t = 1) {
+
+  h0_probs <- simulate_probs(a_c, b_c, n, n_sims, true_ctrl, true_ctrl, a_t, b_t)
+  tau       <- quantile(h0_probs, 1 - target_alpha)   # calibrated threshold
+
+  h1_probs  <- simulate_probs(a_c, b_c, n, n_sims, true_ctrl, true_trt,  a_t, b_t)
+
+  list(
+    threshold  = as.numeric(tau),
+    type1_err  = mean(h0_probs >= tau),
+    power      = mean(h1_probs >= tau)
+  )
+}
+```
+
+---
+
+## Part 1: Power gain from historical control borrowing
+
+Three control-arm priors, **all centered at the true control rate of 20%**,
+varying only in informativeness (ESS).
+
+| Prior | ESS | Encoding |
+|-------|-----|----------|
+| Beta(1,4) | 5 | ~5 historical patients |
+| Beta(4,16) | 20 | ~20 historical patients |
+| Beta(10,40) | 50 | ~50 historical patients |
+
+The treatment prior is flat Beta(1,1) throughout. Each design is calibrated
+to 5% Type I error at every sample size before comparing power.
+
+```{r part1-sim}
+priors_p1 <- list(
+  "Minimal ESS Beta(1,4)" = c(a = 1,  b = 4),
+  "Weak Beta(4,16)"       = c(a = 4,  b = 16),
+  "Strong Beta(10,40)"    = c(a = 10, b = 40)
+)
+
+# Sanity check prior means (all should be TRUE_CTRL = 0.20)
+imap_dfr(priors_p1, \(pr, label) tibble(
+  prior = label,
+  mean  = pr["a"] / (pr["a"] + pr["b"]),
+  ess   = pr["a"] + pr["b"]
+))
+```
+
+```{r part1-power, cache=TRUE, cache.extra=1}
+power_results <- imap_dfr(priors_p1, \(pr, label) {
+  message("Part 1 | ", label)
+  map_dfr(N_SEQ, \(n) {
+    res <- calibrated_design(pr["a"], pr["b"], n, N_SIMS, TRUE_CTRL, TRUE_TRT)
+    tibble(n = n, power = res$power, type1 = res$type1_err,
+           tau = res$threshold, prior = label)
+  })
+})
+
+# N at first ≥ 80% calibrated power
+# Note: if a curve never crosses 80%, this will return an empty tibble for that prior
+n80 <- power_results |>
+  group_by(prior) |>
+  filter(power >= 0.80) |>
+  slice(1) |>
+  select(prior, n80 = n, power, tau)
+
+n80
+```
+
+```{r fig1, fig.cap="Calibrated power curves: all designs hold Type I error at 5%."}
+ggplot(power_results, aes(n, power, color = prior)) +
+  geom_line(linewidth = 1.2) +
+  geom_point(size = 2.5) +
+  geom_hline(yintercept = 0.80, linetype = "dashed", color = "grey50") +
+  geom_vline(
+    data = n80,
+    aes(xintercept = n80, color = prior),
+    linetype = "dotted", linewidth = 0.9
+  ) +
+  annotate("text", x = 305, y = 0.815, label = "80% power",
+           color = "grey50", size = 3.2, hjust = 1) +
+  scale_color_manual(values = prior_colors) +
+  scale_y_continuous(labels = scales::percent_format(), limits = c(0, 1)) +
+  scale_x_continuous(breaks = N_SEQ) +
+  labs(
+    title    = "Figure 1 — Historical Control Borrowing Increases Power at Fixed Type I Error",
+    subtitle = glue::glue(
+      "True control: {scales::percent(TRUE_CTRL)}  |  ",
+      "True treatment: {scales::percent(TRUE_TRT)}  |  ",
+      "All designs calibrated to {scales::percent(TARGET_ALPHA)} Type I error"
+    ),
+    x       = "Patients per arm",
+    y       = "Calibrated power",
+    caption = paste(
+      "All three priors centered at 20% (true control rate); ESS varies.",
+      "Calibrated threshold \u03c4 estimated separately for each (prior, N) via simulation quantile.",
+      "Dotted verticals mark first N \u2265 80% power. Treatment prior: flat Beta(1,1) throughout.",
+      sep = "\n"
+    )
+  ) +
+  theme_eb()
+```
+
+```{r fig1b, fig.cap="Empirical Type I error after calibration (should be near 5% throughout)."}
+ggplot(power_results, aes(n, type1, color = prior)) +
+  geom_line(linewidth = 1.1) +
+  geom_point(size = 2) +
+  geom_hline(yintercept = TARGET_ALPHA, linetype = "dashed", color = "grey50") +
+  annotate("text", x = 305, y = TARGET_ALPHA + 0.008, label = "5% target",
+           color = "grey50", size = 3.2, hjust = 1) +
+  scale_color_manual(values = prior_colors) +
+  scale_y_continuous(labels = scales::percent_format(), limits = c(0, 0.15)) +
+  scale_x_continuous(breaks = N_SEQ) +
+  labs(
+    title    = "Figure 1b — Empirical Type I Error After Design Calibration",
+    subtitle = "Deviations from 5% reflect simulation noise in the calibration step",
+    x        = "Patients per arm",
+    y        = "Empirical Type I error"
+  ) +
+  theme_eb()
+```
+
+> **Key result:** At a **common 5% Type I error**, the strong prior (ESS = 50)
+reaches 80% power at
+N = `r n80 |> dplyr::filter(prior == "Strong Beta(10,40)") |> dplyr::pull(n80)`/arm, versus
+N = `r n80 |> dplyr::filter(prior == "Minimal ESS Beta(1,4)") |> dplyr::pull(n80)`/arm for the
+minimal-ESS prior — saving
+`r (n80 |> dplyr::filter(prior == "Minimal ESS Beta(1,4)") |> dplyr::pull(n80) - n80 |> dplyr::filter(prior == "Strong Beta(10,40)") |> dplyr::pull(n80)) * 2`
+patients total. The power gain is a clean consequence of ESS, not of shifting
+the prior mean.
+
+---
+
+## Part 2: Robustness to prior misspecification
+
+What happens when the historical data was misleading? We hold ESS ≈ 50 fixed
+and vary the prior mean, then compare **calibrated** power and the empirical
+Type I error under each scenario's own calibrated threshold.
+
+Because calibration is done per-scenario under that scenario's own null,
+any remaining deviation from 5% in the figures below reflects finite simulation
+error in the calibration step, not a fundamental failure of the approach. The
+more meaningful operating differences show up in the calibrated threshold itself
+and in power: a misspecified prior changes what threshold the design requires,
+and can shift power substantially depending on the direction of misspecification.
+
+| Scenario | Prior | Prior Mean | True Control |
+|----------|-------|-----------|--------------|
+| Correct | Beta(10,40) | 20% | 20% |
+| Pessimistic | Beta(15,35) | 30% | 20% |
+| Optimistic | Beta(4,46) | 8% | 20% |
+
+```{r part2-sim, cache=TRUE}
+rob_priors <- list(
+  "Correct \u03bc=0.20"     = c(a = 10, b = 40),
+  "Pessimistic \u03bc=0.30" = c(a = 15, b = 35),
+  "Optimistic \u03bc=0.08"  = c(a = 4,  b = 46)
+)
+
+robustness_results <- imap_dfr(rob_priors, \(pr, label) {
+  message("Part 2 | ", label)
+  map_dfr(N_SEQ, \(n) {
+    res <- calibrated_design(pr["a"], pr["b"], n, N_SIMS, TRUE_CTRL, TRUE_TRT)
+    tibble(n = n, power = res$power, type1 = res$type1_err,
+           tau = res$threshold, scenario = label)
+  })
+})
+
+# Key numbers at N = 150
+robustness_results |>
+  filter(n == 150) |>
+  select(scenario, tau, type1, power) |>
+  mutate(across(c(type1, power), \(x) scales::percent(x, accuracy = 0.1)))
+```
+
+```{r fig2, fig.cap="Calibrated power (left) and residual Type I error (right) under prior misspecification."}
+p2a <- ggplot(robustness_results, aes(n, power, color = scenario)) +
+  geom_line(linewidth = 1.1) +
+  geom_point(size = 2) +
+  geom_hline(yintercept = 0.80, linetype = "dashed", color = "grey60") +
+  annotate("text", x = 305, y = 0.815, label = "80%",
+           color = "grey50", size = 3, hjust = 1) +
+  scale_color_manual(values = robust_colors) +
+  scale_y_continuous(labels = scales::percent_format(), limits = c(0, 1)) +
+  scale_x_continuous(breaks = c(50, 100, 150, 200, 250, 300)) +
+  labs(title = "Calibrated Power", x = "Patients per arm", y = "Power") +
+  theme_eb() +
+  theme(legend.position = "right")
+
+p2b <- ggplot(robustness_results, aes(n, type1, color = scenario)) +
+  geom_line(linewidth = 1.1) +
+  geom_point(size = 2) +
+  geom_hline(yintercept = TARGET_ALPHA, linetype = "dashed", color = "grey60") +
+  annotate("text", x = 305, y = TARGET_ALPHA + 0.008, label = "5% target",
+           color = "grey50", size = 3, hjust = 1) +
+  scale_color_manual(values = robust_colors) +
+  scale_y_continuous(labels = scales::percent_format(), limits = c(0, 0.20)) +
+  scale_x_continuous(breaks = c(50, 100, 150, 200, 250, 300)) +
+  labs(title = "Residual Type I Error After Calibration",
+       x = "Patients per arm", y = "Type I error") +
+  theme_eb() +
+  theme(legend.position = "right")
+
+(p2a / p2b) +
+  plot_annotation(
+    title    = "Figure 2 — Prior Misspecification Shifts Operating Tradeoffs",
+    subtitle = "ESS \u2248 50 throughout. True control rate: 20%. Threshold calibrated per scenario.",
+    caption  = paste(
+      "Pessimistic prior (μ=0.30): overestimates control rate \u2192 conservative, lower power.",
+      "Optimistic prior (μ=0.08): underestimates control rate \u2192 requires stricter threshold, less robust under drift.",
+      "Remaining deviations from 5% Type I error reflect simulation noise in calibration.",
+      sep = "\n"
+    ),
+    theme = theme(
+      plot.title    = element_text(face = "bold", size = 13),
+      plot.subtitle = element_text(color = "grey40", size = 10),
+      plot.caption  = element_text(color = "grey50", size = 8.5)
+    )
+  )
+```
+
+> **Key result:** The main effect of misspecification shows up in the calibrated
+threshold τ and in power, not in persistent Type I error inflation — which is
+largely absorbed by the per-scenario calibration. A pessimistic prior is
+conservative: it requires a lower threshold and loses power. An optimistic prior
+requires a stricter calibrated threshold and is more sensitive to prior–data
+conflict; under real-world drift between historical and current controls, that
+lack of robustness becomes more consequential. Any remaining
+deviation from 5% in Figure 2 (right panel) is primarily simulation noise.
+
+---
+
+## Part 3: The self-correcting property
+
+The posterior mean of the control arm converges toward the true rate as data
+accumulate. To avoid an artifact of a single lucky or unlucky simulation path,
+we run `r N_SIMS_BANDS` independent realisations and report the **median** plus
+**50% and 95% simulation quantile bands** across paths.
+
+```{r part3-sim, cache=TRUE}
+run_convergence_paths <- function(a, b, n_max, true_ctrl, n_paths) {
+  n_trace <- seq(5, n_max, by = 5)
+  # matrix: rows = trace points, cols = paths
+  mat <- replicate(n_paths, {
+    obs <- rbinom(n_max, 1, true_ctrl)
+    cumsum_obs <- cumsum(obs)[n_trace]
+    (a + cumsum_obs) / (a + b + n_trace)
+  })
+  # Summarise across paths
+  map_dfr(seq_along(n_trace), \(i) tibble(
+    n      = n_trace[i],
+    median = median(mat[i, ]),
+    lo95   = quantile(mat[i, ], 0.025),
+    hi95   = quantile(mat[i, ], 0.975),
+    lo50   = quantile(mat[i, ], 0.25),
+    hi50   = quantile(mat[i, ], 0.75)
+  ))
+}
+
+convergence_results <- imap_dfr(rob_priors, \(pr, label) {
+  run_convergence_paths(pr["a"], pr["b"], 300, TRUE_CTRL, N_SIMS_BANDS) |>
+    mutate(scenario = label)
+})
+```
+
+```{r fig3, fig.cap="Median posterior mean ± bands across 500 simulated control arms."}
+ggplot(convergence_results, aes(n, color = scenario, fill = scenario)) +
+  geom_ribbon(aes(ymin = lo95, ymax = hi95), alpha = 0.10, color = NA) +
+  geom_ribbon(aes(ymin = lo50, ymax = hi50), alpha = 0.20, color = NA) +
+  geom_line(aes(y = median), linewidth = 1.2) +
+  geom_hline(yintercept = TRUE_CTRL, linetype = "dashed",
+             color = "grey30", linewidth = 0.9) +
+  annotate("text", x = 305, y = TRUE_CTRL -0.05,
+           label = paste0("True rate = ", scales::percent(TRUE_CTRL)),
+           color = "grey30", size = 3.2, hjust = 1) +
+  scale_color_manual(values = robust_colors) +
+  scale_fill_manual(values  = robust_colors) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1),
+                     limits = c(0.02, 0.42)) +
+  scale_x_continuous(breaks = c(50, 100, 150, 200, 250, 300)) +
+  labs(
+    title    = "Figure 3 — The Likelihood Eventually Overwhelms Any Prior",
+    subtitle = paste(
+      "Median posterior mean of control arm over {N_SIMS_BANDS} simulations",
+      "Bands: 50% (dark) and 95% (light) empirical quantile bands across simulated paths",
+      "ESS \u2248 50 across all priors",
+      sep = "\n"
+    ),
+    x       = "Cumulative patients observed (control arm)",
+    y       = "Posterior mean",
+    caption = paste(
+      "Pessimistic prior starts high; optimistic starts low.",
+      "Medians approach the true rate roughly in the N = 100\u2013150 range (visually approximate),",
+      "the self-correcting property of Bayesian updating.",
+      sep = "\n"
+    )
+  ) +
+  theme_eb()
+```
+
+> **Key result:** The median of all three posteriors converges to the true 20%
+rate by approximately N = 100–150. The 95% bands narrow predictably with sample
+size. This confirms the self-correcting claim on a stable, replication-robust
+basis rather than a single path.
+
+---
+
+## Summary
+
+```{r summary-table}
+# Join ESS onto n80, then derive baseline from the lowest-ESS design
+n80_annotated <- n80 |>
+  dplyr::left_join(
+    imap_dfr(priors_p1, \(pr, label) tibble(
+      prior = label,
+      ess   = pr["a"] + pr["b"],
+      mean  = scales::percent(pr["a"] / (pr["a"] + pr["b"]))
+    )),
+    by = "prior"
+  )
+
+flat_n80 <- n80_annotated |>
+  dplyr::ungroup() |>
+  dplyr::arrange(ess) |>
+  dplyr::slice(1) |>
+  dplyr::pull(n80)
+
+n80_annotated |>
+  dplyr::transmute(
+    Prior                    = prior,
+    ESS                      = ess,
+    `Prior Mean`             = mean,
+    `N at 80% Power`         = n80,
+    `Patients Saved vs Minimal ESS` = (flat_n80 - n80) * 2
+  ) |>
+  knitr::kable(align = "lrrcc")
+```
+
+**Bottom line:** Informative priors on the control arm aren't a way to cheat
+the data. They're a mechanism for putting existing historical knowledge to work —
+at a controlled, calibrated Type I error rate. The sample size savings are real,
+the operating consequences of misspecification are quantifiable and manageable,
+and with enough accumulating data, the likelihood pulls the posterior toward the truth even when the prior is misspecified. FDA's January 2026
+Bayesian guidance addresses this framework explicitly.
+
+---
+
+## Session info
+
+```{r session}
+sessionInfo()
+```
