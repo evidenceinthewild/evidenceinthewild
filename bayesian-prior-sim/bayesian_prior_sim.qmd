@@ -2,7 +2,7 @@
 title: "Priors Aren't the Problem — They're the Point"
 subtitle: "A simulation study on historical control borrowing in Bayesian clinical trials"
 author: "Maggie Qian"
-date: "2026-03-12"
+date: "2026-03-10"
 format:
   html:
     toc: true
