@@ -74,26 +74,45 @@ I focus on trial design strategy and statistical decision-making. I do not offer
 [![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.18879839-blue?style=for-the-badge&logo=doi)](https://doi.org/10.5281/zenodo.18879839)
 [![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.18880066-blue?style=for-the-badge&logo=doi)](https://doi.org/10.5281/zenodo.18880066)
 
-[**Zetyra**](https://zetyra.com) is a web-based statistical software platform with **13 calculators** (11 validated pro calculators) spanning frequentist and Bayesian methodologies for clinical trial design.
+[**Zetyra**](https://zetyra.com) is a web-based statistical software platform with **19 calculators** spanning frequentist, Bayesian, adaptive, master-protocol, and composed-pipeline methodologies for clinical trial design across binary, continuous, and survival endpoints.
 
-Phase III oncology trials average **$50-100M** and take **4-6 years** to complete. Traditional tools (PASS, nQuery) cost **$5,000-$15,000/year** per seat with no validation transparency. Zetyra provides the same rigor at a fraction of the cost, validated with **499 automated tests** benchmarked against gsDesign, rpact, conjugate analytical solutions, and published clinical trials.
+Phase III oncology trials average **$50-100M** and take **4-6 years** to complete. Traditional tools (PASS, nQuery) cost **$5,000-$15,000/year** per seat with no validation transparency. Zetyra provides the same rigor at a fraction of the cost, with simulation-based validation benchmarked against gsDesign, rpact, RBesT, conjugate analytical solutions, and published clinical trials. Two Zetyra-authored papers are reproduced end-to-end within the platform: the JSM 2026 composed-pipeline T1E result, and the conditional-power promising-zone exact-enumeration result for single-arm SSR.
 
-**Frequentist Calculators:**
+**Free Calculators:**
+
+- **Sample Size & Chi-Square** - Two-sample t-test power and categorical data analysis
+
+**Frequentist (Pro):**
 
 - **CUPED** - ~30% sample size reduction using baseline-outcome correlations (FDA-endorsed covariate adjustment)
-- **Group Sequential Design** - Interim monitoring with O'Brien-Fleming/Pocock boundaries (validated against gsDesign R package)
-- **Survival Analysis** - Time-to-event sample sizing via Schoenfeld, Freedman, and Lakatos formulas
-- **Sample Size Re-estimation** - Blinded and unblinded adaptive designs with promising zone methodology
+- **Group Sequential Design** - Interim monitoring with O'Brien-Fleming/Pocock/Hwang-Shih-DeCani boundaries (validated against gsDesign)
+- **Survival Power Analysis** - Time-to-event sizing via Schoenfeld and Freedman formulas with NI support and three solve modes (N / power / minimum-detectable HR)
 
-**Bayesian Toolkit** (6 calculators, add-on aligned with FDA January 2026 draft guidance):
+**Bayesian Toolkit** (add-on, aligned with FDA January 2026 draft guidance):
 
-- **Prior Elicitation** - Quantile matching, ESS-based, and historical data methods
-- **External Data Borrowing** - MAP prior, power prior, and commensurate prior approaches
+- **Prior Elicitation** - Quantile matching, ESS-based, and historical-data methods
+- **External Data Borrowing** - MAP, power-prior, and commensurate-prior approaches
 - **One-Arm & Two-Arm Design** - Bayesian sample sizing for binary and continuous endpoints
-- **Sequential Monitoring** - Bayesian interim analysis with posterior probability stopping rules
-- **Predictive Power (PPoS)** - Probability of trial success given interim data for decision guidance at planned or ad-hoc interim analyses
+- **Sequential Monitoring** - Dual-threshold posterior probability stopping rules separating statistical and clinical significance with MCID and indeterminate-zone tracking
+- **Predictive Power (PPoS)** - Probability of trial success given interim data for go/no-go decisions
 
-**Features:** Free tier with basic calculators, pro tier with advanced frequentist calculators + project management and PDF export, Bayesian Toolkit available as add-on
+**Adaptive Core (Pro):**
+
+- **Blinded SSR** - Kieser-Friede nuisance-parameter method (continuous, binary, survival endpoints)
+- **Unblinded SSR** - Mehta-Pocock promising-zone with inverse-normal combination test
+- **Single-Arm SSR (Phase II ORR)** - Bayesian PPoS or CP promising-zone, decoupled γ_efficacy / γ_final, in-product γ_final calibration helper, validated against NCT03377023
+- **Adaptive Randomization (RAR)** - DBCD, Thompson Sampling, Neyman optimal allocation
+- **Minimization** - Pocock-Simon covariate-adaptive allocation
+
+**Master Protocol (Pro):**
+
+- **Basket / Umbrella / Platform trials** - Biomarker-defined sub-studies (BHM, EXNEX), shared-control umbrella, MAMS platform with non-concurrent control adjustment
+
+**Composed Pipeline T1E (Pro, BETA):**
+
+- Pipeline-level Type I error simulator for two-arm Phase II designs composing MAP borrowing + Bayesian monitoring + SSR + RAR. Reproduces the JSM 2026 paper's headline result (T1E = 0.0771 = +208% above α = 0.025 under mild prior-data drift) within Monte Carlo error. One-click presets reproduce the paper's three reference tables (Headline, SSR × RAR factorial, Conflict × Trend mechanism isolation).
+
+**Features:** Free tier with two foundational calculators, Pro with advanced frequentist + adaptive + master-protocol calculators + project management + PDF export, Bayesian Toolkit available as add-on, transparent simulation-based validation.
 
 **→ [Try Zetyra](https://zetyra.com) | [Platform Whitepaper](https://doi.org/10.5281/zenodo.18879839) | [Bayesian Toolkit Whitepaper](https://doi.org/10.5281/zenodo.18880066)**
 
