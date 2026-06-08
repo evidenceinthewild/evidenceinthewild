@@ -1,0 +1,13 @@
+patient_id,arm,baseline_6mwt,week24_6mwt,change,source
+010,30mg,261,48,-213,Exact (paper text: lost ambulation at Wk12)
+009,30mg,346,52,-294,Baseline from paper (346m); Wk24 derived (CE-23 chart)
+02A,30mg,372,397,25,Reconstructed (constrained by mITT group mean change)
+06A,30mg,442,457,15,Reconstructed (constrained by mITT group mean change)
+03A,50mg,365,360,-5,Reconstructed (constrained by group mean change)
+04A,50mg,389,409,20,Reconstructed (constrained by group mean change)
+12A,50mg,401,426,25,Reconstructed (constrained by group mean change)
+15A,50mg,429,439,10,Reconstructed (constrained by group mean change)
+05P,placebo,364,334,-30,Reconstructed (constrained by group mean change)
+07P,placebo,370,330,-40,Reconstructed (constrained by group mean change)
+08P,placebo,388,338,-50,Reconstructed (constrained by group mean change)
+13P,placebo,456,356,-100,Reconstructed (constrained by group mean change)
