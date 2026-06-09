@@ -2,7 +2,7 @@
 title: "Interactions in Composed Bayesian Trial Designs"
 subtitle: "Computational Supplement to FDA Guidance Comments (Docket No. FDA-2025-D-3217)"
 author: "Lu Qian"
-date: "2026-03-03"
+date: "2026-03-05"
 format:
   html:
     toc: true

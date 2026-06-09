@@ -61,20 +61,31 @@ observed_diff = observed_50
 n_extreme = int(np.sum(np.abs(perm_dist_50) >= abs(observed_diff)))
 p_two = n_extreme / len(perm_dist_50)
 
-unique_vals, counts = np.unique(np.round(perm_dist_50, 1), return_counts=True)
-colors = ['#c0392b' if abs(v) >= abs(observed_diff) else '#bdc3c7' for v in unique_vals]
-ax.bar(unique_vals, counts, width=6, color=colors, edgecolor='white', linewidth=0.5)
+# Bin edges: 10m-wide bins spanning the range of permutation diffs
+bins = np.arange(np.floor(perm_dist_50.min() / 10) * 10 - 5,
+                 np.ceil(perm_dist_50.max() / 10) * 10 + 15, 10)
+# Color each bar: red if bin centre has |diff| >= |observed|, grey otherwise
+n_vals, bin_edges, patches = ax.hist(perm_dist_50, bins=bins, color='#bdc3c7',
+                                      edgecolor='white', linewidth=0.5)
+for patch, left, right in zip(patches, bin_edges[:-1], bin_edges[1:]):
+    centre = (left + right) / 2
+    if abs(centre) >= abs(observed_diff) - 5:  # bin contains extreme values
+        # Check if any actual permutation value in this bin is extreme
+        in_bin = perm_dist_50[(perm_dist_50 >= left) & (perm_dist_50 < right)]
+        if np.any(np.abs(in_bin) >= abs(observed_diff)):
+            patch.set_facecolor('#c0392b')
 
 ax.axvline(observed_diff, color='#c0392b', linewidth=2, linestyle='--', zorder=5)
 ax.axvline(-observed_diff, color='#c0392b', linewidth=1, linestyle=':', alpha=0.5, zorder=5)
 ax.annotate(f'Observed Δ = +{observed_diff:.1f}m\ntwo-sided p = {p_two:.3f}',
-            xy=(observed_diff, max(counts)*0.85), xytext=(observed_diff + 20, max(counts)*0.9),
+            xy=(observed_diff, ax.get_ylim()[1]*0.75),
+            xytext=(observed_diff + 18, ax.get_ylim()[1]*0.85),
             fontsize=12, fontweight='bold', color='#c0392b',
             arrowprops=dict(arrowstyle='->', color='#c0392b', lw=1.5),
             bbox=dict(boxstyle='round,pad=0.4', facecolor='white', edgecolor='#c0392b', alpha=0.9))
 
 ax.annotate('MMRM: p ≈ 0.56\n(derived; not significant)',
-            xy=(-20, max(counts)*0.65), fontsize=10, fontstyle='italic', color='#7f8c8d',
+            xy=(-75, ax.get_ylim()[1]*0.92), fontsize=10, fontstyle='italic', color='#7f8c8d',
             bbox=dict(boxstyle='round,pad=0.4', facecolor='#f8f9fa', edgecolor='#bdc3c7'))
 
 ax.set_xlabel('Difference in mean 6MWT change (50mg − placebo), metres', fontsize=12)
@@ -84,9 +95,11 @@ ax.set_title('Exact Permutation Distribution: 50 mg/kg Eteplirsen vs Placebo\n'
 
 red_patch = mpatches.Patch(color='#c0392b', label=f'|Δ| ≥ observed ({n_extreme}/70 = two-sided p={p_two:.3f})')
 grey_patch = mpatches.Patch(color='#bdc3c7', label=f'|Δ| < observed ({len(perm_dist_50) - n_extreme}/70)')
-ax.legend(handles=[red_patch, grey_patch], loc='upper left', framealpha=0.9)
+ax.legend(handles=[red_patch, grey_patch], loc='upper center', framealpha=0.9,
+          bbox_to_anchor=(0.5, -0.12), ncol=2)
 
 plt.tight_layout()
+fig.subplots_adjust(bottom=0.2)
 plt.savefig(os.path.join(PNG_DIR, 'fig1_permutation_distribution_50mg.png'), dpi=200, bbox_inches='tight')
 plt.savefig(os.path.join(PDF_DIR, 'fig1_permutation_distribution_50mg.pdf'), bbox_inches='tight')
 print("Figure 1 saved.")
@@ -101,14 +114,21 @@ observed_mitt = observed_mitt_val
 n_extreme_mitt = int(np.sum(np.abs(perm_dist_mitt) >= abs(observed_mitt)))
 p_two_mitt = n_extreme_mitt / len(perm_dist_mitt)
 
-unique_vals2, counts2 = np.unique(np.round(perm_dist_mitt, 1), return_counts=True)
-colors2 = ['#c0392b' if abs(v) >= abs(observed_mitt) else '#bdc3c7' for v in unique_vals2]
-ax.bar(unique_vals2, counts2, width=8, color=colors2, edgecolor='white', linewidth=0.5)
+# Bin edges: 10m-wide bins
+bins2 = np.arange(np.floor(perm_dist_mitt.min() / 10) * 10 - 5,
+                  np.ceil(perm_dist_mitt.max() / 10) * 10 + 15, 10)
+n_vals2, bin_edges2, patches2 = ax.hist(perm_dist_mitt, bins=bins2, color='#bdc3c7',
+                                         edgecolor='white', linewidth=0.5)
+for patch, left, right in zip(patches2, bin_edges2[:-1], bin_edges2[1:]):
+    in_bin = perm_dist_mitt[(perm_dist_mitt >= left) & (perm_dist_mitt < right)]
+    if np.any(np.abs(in_bin) >= abs(observed_mitt)):
+        patch.set_facecolor('#c0392b')
 
 ax.axvline(observed_mitt, color='#c0392b', linewidth=2, linestyle='--', zorder=5)
 ax.axvline(-observed_mitt, color='#c0392b', linewidth=1, linestyle=':', alpha=0.5, zorder=5)
 ax.annotate(f'Observed Δ = +{observed_mitt:.1f}m\ntwo-sided p = {p_two_mitt:.3f}',
-            xy=(observed_mitt, max(counts2)*0.8), xytext=(observed_mitt + 25, max(counts2)*0.85),
+            xy=(observed_mitt, ax.get_ylim()[1]*0.75),
+            xytext=(observed_mitt + 20, ax.get_ylim()[1]*0.85),
             fontsize=12, fontweight='bold', color='#c0392b',
             arrowprops=dict(arrowstyle='->', color='#c0392b', lw=1.5),
             bbox=dict(boxstyle='round,pad=0.4', facecolor='white', edgecolor='#c0392b', alpha=0.9))
@@ -120,9 +140,11 @@ ax.set_title('Exact Permutation Distribution: mITT Eteplirsen (n=6) vs Placebo (
 
 red_patch2 = mpatches.Patch(color='#c0392b', label=f'|Δ| ≥ observed ({n_extreme_mitt}/210 = two-sided p={p_two_mitt:.3f})')
 grey_patch2 = mpatches.Patch(color='#bdc3c7', label=f'|Δ| < observed ({len(perm_dist_mitt) - n_extreme_mitt}/210)')
-ax.legend(handles=[red_patch2, grey_patch2], loc='upper left', framealpha=0.9)
+ax.legend(handles=[red_patch2, grey_patch2], loc='upper center', framealpha=0.9,
+          bbox_to_anchor=(0.5, -0.12), ncol=2)
 
 plt.tight_layout()
+fig.subplots_adjust(bottom=0.2)
 plt.savefig(os.path.join(PNG_DIR, 'fig2_permutation_distribution_mitt.png'), dpi=200, bbox_inches='tight')
 plt.savefig(os.path.join(PDF_DIR, 'fig2_permutation_distribution_mitt.pdf'), bbox_inches='tight')
 print("Figure 2 saved.")
@@ -172,33 +194,34 @@ fig, ax = plt.subplots(figsize=(8, 5))
 comparisons = ['50mg vs Placebo\n(dose arm)', 'mITT Eteplirsen\nvs Placebo', 'All Eteplirsen\n(ITT) vs Placebo']
 p_two_itt = results_data['results']['itt_all_vs_placebo']['p_two']
 perm_pvals = [p_two, p_two_mitt, p_two_itt]
-mmrm_pvals = [0.563, None, None]
 
 x = np.arange(len(comparisons))
 width = 0.3
 
 bars1 = ax.bar(x - width/2, perm_pvals, width, label='Permutation test (two-sided)', color='#2ecc71', edgecolor='white')
-mmrm_x = [0]
-mmrm_y = [0.563]
-bars2 = ax.bar([x[0] + width/2], mmrm_y, width, label='MMRM (derived, two-sided)', color='#e74c3c', edgecolor='white')
+bars2 = ax.bar([x[0] + width/2], [0.563], width, label='MMRM (derived, two-sided)', color='#e74c3c', edgecolor='white')
 
+ax.set_yscale('log')
 ax.axhline(0.05, color='black', linewidth=1, linestyle=':', alpha=0.5, label='α = 0.05')
 
-for i, (bar, pv) in enumerate(zip(bars1, perm_pvals)):
-    ax.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.015,
+for bar, pv in zip(bars1, perm_pvals):
+    ax.text(bar.get_x() + bar.get_width()/2, pv * 1.5,
             f'p={pv:.3f}', ha='center', fontsize=10, fontweight='bold', color='#27ae60')
 
-ax.text(bars2[0].get_x() + bars2[0].get_width()/2, bars2[0].get_height() + 0.015,
+ax.text(bars2[0].get_x() + bars2[0].get_width()/2, 0.563 * 1.2,
         'p≈0.56', ha='center', fontsize=10, fontweight='bold', color='#c0392b')
 
 ax.set_xticks(x)
 ax.set_xticklabels(comparisons, fontsize=10)
-ax.set_ylabel('p-value (two-sided)', fontsize=12)
+ax.set_ylabel('p-value (two-sided, log scale)', fontsize=12)
 ax.set_title('The Permutation Test Nobody Ran\nEteplirsen Study 201 — Week 24 6MWT', fontsize=14, fontweight='bold')
-ax.set_ylim(0, 1.1)
-ax.legend(loc='upper right', fontsize=10)
+ax.set_ylim(0.002, 2.0)
+ax.set_yticks([0.005, 0.01, 0.05, 0.1, 0.5, 1.0])
+ax.set_yticklabels(['0.005', '0.01', '0.05', '0.10', '0.50', '1.00'])
+ax.legend(loc='upper center', fontsize=10, bbox_to_anchor=(0.5, -0.12), ncol=3)
 
 plt.tight_layout()
+fig.subplots_adjust(bottom=0.22)
 plt.savefig(os.path.join(PNG_DIR, 'fig4_pvalue_comparison.png'), dpi=200, bbox_inches='tight')
 plt.savefig(os.path.join(PDF_DIR, 'fig4_pvalue_comparison.pdf'), bbox_inches='tight')
 print("Figure 4 saved.")
