@@ -71,7 +71,7 @@ I focus on trial design strategy and statistical decision-making. I do not offer
 
 ## Zetyra
 
-[![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.18879839-blue?style=for-the-badge&logo=doi)](https://doi.org/10.5281/zenodo.18879839)
+[![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.20218751-blue?style=for-the-badge&logo=doi)](https://doi.org/10.5281/zenodo.20218751)
 [![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.18880066-blue?style=for-the-badge&logo=doi)](https://doi.org/10.5281/zenodo.18880066)
 
 [**Zetyra**](https://zetyra.com) is a web-based statistical software platform with **19 calculators** spanning frequentist, Bayesian, adaptive, master-protocol, and composed-pipeline methodologies for clinical trial design across binary, continuous, and survival endpoints.
@@ -114,7 +114,7 @@ Phase III oncology trials average **$50-100M** and take **4-6 years** to complet
 
 **Features:** Free tier with two foundational calculators, Pro with advanced frequentist + adaptive + master-protocol calculators + project management + PDF export, Bayesian Toolkit available as add-on, transparent simulation-based validation.
 
-**→ [Try Zetyra](https://zetyra.com) | [Platform Whitepaper](https://doi.org/10.5281/zenodo.18879839) | [Bayesian Toolkit Whitepaper](https://doi.org/10.5281/zenodo.18880066)**
+**→ [Try Zetyra](https://zetyra.com) | [Platform Whitepaper](https://doi.org/10.5281/zenodo.20218751) | [Bayesian Toolkit Whitepaper](https://doi.org/10.5281/zenodo.18880066)**
 
 ---
 
