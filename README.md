@@ -110,7 +110,7 @@ Phase III oncology trials average **$50-100M** and take **4-6 years** to complet
 
 **Composed Pipeline T1E (Pro, BETA):**
 
-- Pipeline-level Type I error simulator for two-arm Phase II designs composing MAP borrowing + Bayesian monitoring + SSR + RAR. Reproduces the JSM 2026 paper's headline result (T1E = 0.0771 = +208% above α = 0.025 under mild prior-data drift) within Monte Carlo error. One-click presets reproduce the paper's three reference tables (Headline, SSR × RAR factorial, Conflict × Trend mechanism isolation).
+- Pipeline-level Type I error simulator for two-arm Phase II designs composing MAP borrowing + Bayesian monitoring + SSR + RAR. Demonstrates the JSM 2026 paper's result: an efficacy threshold calibrated at a single assumed control rate does not control Type I error across the composite null — error rises monotonically with the baseline rate, reaching 0.2618 against a nominal 0.025, and disabling SSR and RAR at that fixed threshold does not restore control. One-click presets run the paper's three reference tables (composite-null sweep, SSR × RAR fixed-threshold ablation, departure × time-trend crossing).
 
 **Features:** Free tier with two foundational calculators, Pro with advanced frequentist + adaptive + master-protocol calculators + project management + PDF export, Bayesian Toolkit available as add-on, transparent simulation-based validation.
 
