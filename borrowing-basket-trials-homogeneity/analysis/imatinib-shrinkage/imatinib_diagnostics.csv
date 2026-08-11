@@ -1,0 +1,2 @@
+"implementation","chains","iterations_per_chain","burn_in_per_chain","retained_draws","mean_gamma_acceptance","mean_sigma_acceptance","max_response_rate_rhat","sigma_rhat","interval_width_reduction","r_version"
+"R",4,40000,10000,120000,0.4401775,0.55751875,1.00459221368815,1.0028255666335,0.504929597111578,"R version 4.6.1 (2026-06-24)"

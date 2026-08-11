@@ -1,0 +1,1696 @@
+{
+  "metadata": {
+    "calibration_trials_per_scenario": 2500,
+    "evaluation_trials_per_scenario": 5000,
+    "mcmc_iterations": 8000,
+    "mcmc_burn_in": 3000,
+    "python_version": "3.14.6",
+    "numpy_version": "2.5.2",
+    "scipy_version": "1.18.0",
+    "input_file": "oc_simulation_inputs.csv"
+  },
+  "thresholds": {
+    "weak": {
+      "No": 0.9767204469536286,
+      "Moderate": 0.9686,
+      "Strong": 0.9556
+    },
+    "strong": {
+      "No": 0.9767204469536286,
+      "Moderate": 0.9812,
+      "Strong": 0.9958
+    }
+  },
+  "diagnostics": [
+    {
+      "scenario": 1,
+      "borrow": "Moderate",
+      "trials": 7500,
+      "iterations": 8000,
+      "burn_in": 3000,
+      "retained_draws_per_trial": 5000,
+      "gamma_acceptance": 0.565966025,
+      "sigma_acceptance": 0.7454568333333333
+    },
+    {
+      "scenario": 1,
+      "borrow": "Strong",
+      "trials": 7500,
+      "iterations": 8000,
+      "burn_in": 3000,
+      "retained_draws_per_trial": 5000,
+      "gamma_acceptance": 0.37899144166666665,
+      "sigma_acceptance": 0.7011054
+    },
+    {
+      "scenario": 2,
+      "borrow": "Moderate",
+      "trials": 7500,
+      "iterations": 8000,
+      "burn_in": 3000,
+      "retained_draws_per_trial": 5000,
+      "gamma_acceptance": 0.5125190958333333,
+      "sigma_acceptance": 0.7486640166666667
+    },
+    {
+      "scenario": 2,
+      "borrow": "Strong",
+      "trials": 7500,
+      "iterations": 8000,
+      "burn_in": 3000,
+      "retained_draws_per_trial": 5000,
+      "gamma_acceptance": 0.36218604583333336,
+      "sigma_acceptance": 0.7039543666666667
+    },
+    {
+      "scenario": 3,
+      "borrow": "Moderate",
+      "trials": 7500,
+      "iterations": 8000,
+      "burn_in": 3000,
+      "retained_draws_per_trial": 5000,
+      "gamma_acceptance": 0.5567963625,
+      "sigma_acceptance": 0.7449726166666667
+    },
+    {
+      "scenario": 3,
+      "borrow": "Strong",
+      "trials": 7500,
+      "iterations": 8000,
+      "burn_in": 3000,
+      "retained_draws_per_trial": 5000,
+      "gamma_acceptance": 0.39014665833333334,
+      "sigma_acceptance": 0.69362115
+    },
+    {
+      "scenario": 4,
+      "borrow": "Moderate",
+      "trials": 7500,
+      "iterations": 8000,
+      "burn_in": 3000,
+      "retained_draws_per_trial": 5000,
+      "gamma_acceptance": 0.5803212541666667,
+      "sigma_acceptance": 0.7431828
+    },
+    {
+      "scenario": 4,
+      "borrow": "Strong",
+      "trials": 7500,
+      "iterations": 8000,
+      "burn_in": 3000,
+      "retained_draws_per_trial": 5000,
+      "gamma_acceptance": 0.4036994875,
+      "sigma_acceptance": 0.6889043166666666
+    },
+    {
+      "scenario": 5,
+      "borrow": "Moderate",
+      "trials": 7500,
+      "iterations": 8000,
+      "burn_in": 3000,
+      "retained_draws_per_trial": 5000,
+      "gamma_acceptance": 0.6441462583333334,
+      "sigma_acceptance": 0.7340066833333333
+    },
+    {
+      "scenario": 5,
+      "borrow": "Strong",
+      "trials": 7500,
+      "iterations": 8000,
+      "burn_in": 3000,
+      "retained_draws_per_trial": 5000,
+      "gamma_acceptance": 0.453222775,
+      "sigma_acceptance": 0.6671744833333333
+    },
+    {
+      "scenario": 6,
+      "borrow": "Moderate",
+      "trials": 7500,
+      "iterations": 8000,
+      "burn_in": 3000,
+      "retained_draws_per_trial": 5000,
+      "gamma_acceptance": 0.5834771208333334,
+      "sigma_acceptance": 0.7430920166666667
+    },
+    {
+      "scenario": 6,
+      "borrow": "Strong",
+      "trials": 7500,
+      "iterations": 8000,
+      "burn_in": 3000,
+      "retained_draws_per_trial": 5000,
+      "gamma_acceptance": 0.40038728333333334,
+      "sigma_acceptance": 0.6913930166666666
+    }
+  ],
+  "results": [
+    {
+      "control": "weak",
+      "scenario": 1,
+      "borrow": "No",
+      "threshold": 0.9767204469536286,
+      "calibration_trials": 2500,
+      "evaluation_trials": 5000,
+      "basket": [
+        {
+          "estimate": 1.1199999999999999,
+          "low": 0.8635392875722449,
+          "high": 1.4515112545765398
+        },
+        {
+          "estimate": 1.0,
+          "low": 0.7593772813946567,
+          "high": 1.3158575092209417
+        },
+        {
+          "estimate": 0.86,
+          "low": 0.6391175631594939,
+          "high": 1.1563321840007208
+        },
+        {
+          "estimate": 0.9400000000000001,
+          "low": 0.707655721568871,
+          "high": 1.2476711932801345
+        }
+      ],
+      "FWER": {
+        "estimate": 3.88,
+        "low": 3.3791558410704257,
+        "high": 4.451656986341645
+      },
+      "FWPD": null,
+      "FWPC": null
+    },
+    {
+      "control": "weak",
+      "scenario": 1,
+      "borrow": "Moderate",
+      "threshold": 0.9686,
+      "calibration_trials": 2500,
+      "evaluation_trials": 5000,
+      "basket": [
+        {
+          "estimate": 1.38,
+          "low": 1.0919427213083528,
+          "high": 1.7427086158290022
+        },
+        {
+          "estimate": 1.2,
+          "low": 0.9334535211612843,
+          "high": 1.5414741886762913
+        },
+        {
+          "estimate": 1.3,
+          "low": 1.021314892536389,
+          "high": 1.653459276912175
+        },
+        {
+          "estimate": 1.16,
+          "low": 0.8984523450010988,
+          "high": 1.496536780992081
+        }
+      ],
+      "FWER": {
+        "estimate": 4.52,
+        "low": 3.978255839785057,
+        "high": 5.131574329137339
+      },
+      "FWPD": null,
+      "FWPC": null
+    },
+    {
+      "control": "weak",
+      "scenario": 1,
+      "borrow": "Strong",
+      "threshold": 0.9556,
+      "calibration_trials": 2500,
+      "evaluation_trials": 5000,
+      "basket": [
+        {
+          "estimate": 2.36,
+          "low": 1.974389149873783,
+          "high": 2.8187574914512603
+        },
+        {
+          "estimate": 2.34,
+          "low": 1.9561396795909352,
+          "high": 2.7970376698119104
+        },
+        {
+          "estimate": 2.02,
+          "low": 1.6652988614443112,
+          "high": 2.4483698172033708
+        },
+        {
+          "estimate": 2.1,
+          "low": 1.7377941132514299,
+          "high": 2.535751733085043
+        }
+      ],
+      "FWER": {
+        "estimate": 4.9,
+        "low": 4.335507170094735,
+        "high": 5.533739545349419
+      },
+      "FWPD": null,
+      "FWPC": null
+    },
+    {
+      "control": "weak",
+      "scenario": 2,
+      "borrow": "No",
+      "threshold": 0.9767204469536286,
+      "calibration_trials": 2500,
+      "evaluation_trials": 5000,
+      "basket": [
+        {
+          "estimate": 23.34,
+          "low": 22.18827868044027,
+          "high": 24.53265518727018
+        },
+        {
+          "estimate": 23.119999999999997,
+          "low": 21.97230811920445,
+          "high": 24.308963537361826
+        },
+        {
+          "estimate": 23.7,
+          "low": 22.54178029175559,
+          "high": 24.89860083055442
+        },
+        {
+          "estimate": 23.06,
+          "low": 21.91341479334722,
+          "high": 24.247948987452467
+        }
+      ],
+      "FWER": null,
+      "FWPD": {
+        "estimate": 65.5,
+        "low": 64.17092330999894,
+        "high": 66.8052779297043
+      },
+      "FWPC": {
+        "estimate": 0.24,
+        "low": 0.13734655564128323,
+        "high": 0.4190551419308018
+      }
+    },
+    {
+      "control": "weak",
+      "scenario": 2,
+      "borrow": "Moderate",
+      "threshold": 0.9686,
+      "calibration_trials": 2500,
+      "evaluation_trials": 5000,
+      "basket": [
+        {
+          "estimate": 52.72,
+          "low": 51.3345899586901,
+          "high": 54.10123374272878
+        },
+        {
+          "estimate": 52.16,
+          "low": 50.77426235054405,
+          "high": 53.5424211770533
+        },
+        {
+          "estimate": 52.12,
+          "low": 50.73424561646592,
+          "high": 53.50249932728705
+        },
+        {
+          "estimate": 51.959999999999994,
+          "low": 50.574187562765935,
+          "high": 53.34280304560942
+        }
+      ],
+      "FWER": null,
+      "FWPD": {
+        "estimate": 86.14,
+        "low": 85.15448208944728,
+        "high": 87.07002841396402
+      },
+      "FWPC": {
+        "estimate": 15.24,
+        "low": 14.27049996573499,
+        "high": 16.262870673485384
+      }
+    },
+    {
+      "control": "weak",
+      "scenario": 2,
+      "borrow": "Strong",
+      "threshold": 0.9556,
+      "calibration_trials": 2500,
+      "evaluation_trials": 5000,
+      "basket": [
+        {
+          "estimate": 78.12,
+          "low": 76.9526929895871,
+          "high": 79.24413145302287
+        },
+        {
+          "estimate": 77.4,
+          "low": 76.2199406257197,
+          "high": 78.53798930769118
+        },
+        {
+          "estimate": 77.7,
+          "low": 76.52519356362882,
+          "high": 78.83227574861502
+        },
+        {
+          "estimate": 77.98,
+          "low": 76.81017416790056,
+          "high": 79.10686523125406
+        }
+      ],
+      "FWER": null,
+      "FWPD": {
+        "estimate": 90.32,
+        "low": 89.46919376947218,
+        "high": 91.10889874567842
+      },
+      "FWPC": {
+        "estimate": 59.64,
+        "low": 58.27319970725081,
+        "high": 60.99199899924849
+      }
+    },
+    {
+      "control": "weak",
+      "scenario": 3,
+      "borrow": "No",
+      "threshold": 0.9767204469536286,
+      "calibration_trials": 2500,
+      "evaluation_trials": 5000,
+      "basket": [
+        {
+          "estimate": 0.88,
+          "low": 0.6562037439973316,
+          "high": 1.1792152950850807
+        },
+        {
+          "estimate": 23.96,
+          "low": 22.797159635998813,
+          "high": 25.162822281299768
+        },
+        {
+          "estimate": 23.599999999999998,
+          "low": 22.44357362450145,
+          "high": 24.79696103819757
+        },
+        {
+          "estimate": 23.94,
+          "low": 22.77751292727921,
+          "high": 25.142499698097172
+        }
+      ],
+      "FWER": {
+        "estimate": 0.88,
+        "low": 0.6562037439973316,
+        "high": 1.1792152950850807
+      },
+      "FWPD": {
+        "estimate": 55.44,
+        "low": 54.05866966507023,
+        "high": 56.81297773776755
+      },
+      "FWPC": {
+        "estimate": 1.3599999999999999,
+        "low": 1.0742591831619501,
+        "high": 1.7204228620532072
+      }
+    },
+    {
+      "control": "weak",
+      "scenario": 3,
+      "borrow": "Moderate",
+      "threshold": 0.9686,
+      "calibration_trials": 2500,
+      "evaluation_trials": 5000,
+      "basket": [
+        {
+          "estimate": 7.24,
+          "low": 6.55404134654297,
+          "high": 7.991612523798315
+        },
+        {
+          "estimate": 41.14,
+          "low": 39.78333682976155,
+          "high": 42.51026684870487
+        },
+        {
+          "estimate": 41.620000000000005,
+          "low": 40.26064242050171,
+          "high": 42.99222426409746
+        },
+        {
+          "estimate": 41.620000000000005,
+          "low": 40.26064242050171,
+          "high": 42.99222426409746
+        }
+      ],
+      "FWER": {
+        "estimate": 7.24,
+        "low": 6.55404134654297,
+        "high": 7.991612523798315
+      },
+      "FWPD": {
+        "estimate": 71.0,
+        "low": 69.72651665030752,
+        "high": 72.24123986800008
+      },
+      "FWPC": {
+        "estimate": 12.9,
+        "low": 11.999292074718372,
+        "high": 13.85767140960487
+      }
+    },
+    {
+      "control": "weak",
+      "scenario": 3,
+      "borrow": "Strong",
+      "threshold": 0.9556,
+      "calibration_trials": 2500,
+      "evaluation_trials": 5000,
+      "basket": [
+        {
+          "estimate": 29.48,
+          "low": 28.232326767123915,
+          "high": 30.759179720701233
+        },
+        {
+          "estimate": 58.660000000000004,
+          "low": 57.28890133762857,
+          "high": 60.017802064683046
+        },
+        {
+          "estimate": 59.040000000000006,
+          "low": 57.670501647105624,
+          "high": 60.39561830172776
+        },
+        {
+          "estimate": 59.36,
+          "low": 57.99191444703402,
+          "high": 60.71371417255451
+        }
+      ],
+      "FWER": {
+        "estimate": 29.48,
+        "low": 28.232326767123915,
+        "high": 30.759179720701233
+      },
+      "FWPD": {
+        "estimate": 74.02,
+        "low": 72.78638027248358,
+        "high": 75.21673932607587
+      },
+      "FWPC": {
+        "estimate": 42.0,
+        "low": 40.638603807088295,
+        "high": 43.37367942403262
+      }
+    },
+    {
+      "control": "weak",
+      "scenario": 4,
+      "borrow": "No",
+      "threshold": 0.9767204469536286,
+      "calibration_trials": 2500,
+      "evaluation_trials": 5000,
+      "basket": [
+        {
+          "estimate": 0.86,
+          "low": 0.6391175631594939,
+          "high": 1.1563321840007208
+        },
+        {
+          "estimate": 1.1400000000000001,
+          "low": 0.88098452155523,
+          "high": 1.4740353125157526
+        },
+        {
+          "estimate": 23.62,
+          "low": 22.463214236295485,
+          "high": 24.817289718325732
+        },
+        {
+          "estimate": 23.52,
+          "low": 22.365014795115137,
+          "high": 24.715642699895092
+        }
+      ],
+      "FWER": {
+        "estimate": 2.0,
+        "low": 1.6471992331652408,
+        "high": 2.4265001535602435
+      },
+      "FWPD": {
+        "estimate": 41.8,
+        "low": 40.439666379417375,
+        "high": 43.17292393248156
+      },
+      "FWPC": {
+        "estimate": 5.34,
+        "low": 4.750397071369691,
+        "high": 5.998174066362813
+      }
+    },
+    {
+      "control": "weak",
+      "scenario": 4,
+      "borrow": "Moderate",
+      "threshold": 0.9686,
+      "calibration_trials": 2500,
+      "evaluation_trials": 5000,
+      "basket": [
+        {
+          "estimate": 4.3,
+          "low": 3.771925108777711,
+          "high": 4.8982428490005105
+        },
+        {
+          "estimate": 4.46,
+          "low": 3.9219458507478335,
+          "high": 5.0679764424079705
+        },
+        {
+          "estimate": 32.48,
+          "low": 31.195841048350818,
+          "high": 33.791059227803984
+        },
+        {
+          "estimate": 33.040000000000006,
+          "low": 31.749716203241064,
+          "high": 34.35632424673529
+        }
+      ],
+      "FWER": {
+        "estimate": 7.9399999999999995,
+        "low": 7.222490060832917,
+        "high": 8.722089026785287
+      },
+      "FWPD": {
+        "estimate": 49.24,
+        "low": 47.855371636311894,
+        "high": 50.6257952706446
+      },
+      "FWPC": {
+        "estimate": 16.28,
+        "low": 15.28264773742563,
+        "high": 17.329126081749024
+      }
+    },
+    {
+      "control": "weak",
+      "scenario": 4,
+      "borrow": "Strong",
+      "threshold": 0.9556,
+      "calibration_trials": 2500,
+      "evaluation_trials": 5000,
+      "basket": [
+        {
+          "estimate": 14.899999999999999,
+          "low": 13.93994862071628,
+          "high": 15.913944055826734
+        },
+        {
+          "estimate": 15.36,
+          "low": 14.38720649703047,
+          "high": 16.38597989372309
+        },
+        {
+          "estimate": 39.64,
+          "low": 38.29262281387577,
+          "high": 41.00328397042582
+        },
+        {
+          "estimate": 39.5,
+          "low": 38.15355701260939,
+          "high": 40.86256472823682
+        }
+      ],
+      "FWER": {
+        "estimate": 21.38,
+        "low": 20.26578961340949,
+        "high": 22.538153645925586
+      },
+      "FWPD": {
+        "estimate": 49.28,
+        "low": 47.89532453622986,
+        "high": 50.66578095457104
+      },
+      "FWPC": {
+        "estimate": 29.86,
+        "low": 28.607353097012613,
+        "high": 31.14356993733429
+      }
+    },
+    {
+      "control": "weak",
+      "scenario": 5,
+      "borrow": "No",
+      "threshold": 0.9767204469536286,
+      "calibration_trials": 2500,
+      "evaluation_trials": 5000,
+      "basket": [
+        {
+          "estimate": 0.0,
+          "low": 0.0,
+          "high": 0.07677019450571244
+        },
+        {
+          "estimate": 0.98,
+          "low": 0.7421083157823486,
+          "high": 1.2931571829110522
+        },
+        {
+          "estimate": 11.62,
+          "low": 10.761050467536808,
+          "high": 12.537878333765775
+        },
+        {
+          "estimate": 42.24,
+          "low": 40.87735911186356,
+          "high": 43.614555622323735
+        }
+      ],
+      "FWER": {
+        "estimate": 0.98,
+        "low": 0.7421083157823486,
+        "high": 1.2931571829110522
+      },
+      "FWPD": {
+        "estimate": 48.68,
+        "low": 47.29612411262494,
+        "high": 50.06590262051003
+      },
+      "FWPC": {
+        "estimate": 5.18,
+        "low": 4.599384613067905,
+        "high": 5.829432189287018
+      }
+    },
+    {
+      "control": "weak",
+      "scenario": 5,
+      "borrow": "Moderate",
+      "threshold": 0.9686,
+      "calibration_trials": 2500,
+      "evaluation_trials": 5000,
+      "basket": [
+        {
+          "estimate": 0.08,
+          "low": 0.031114697610156263,
+          "high": 0.20553266458434705
+        },
+        {
+          "estimate": 2.8000000000000003,
+          "low": 2.3777044258476123,
+          "high": 3.2947666377657807
+        },
+        {
+          "estimate": 17.96,
+          "low": 16.920752000010726,
+          "high": 19.04844234062854
+        },
+        {
+          "estimate": 44.3,
+          "low": 42.92802878827036,
+          "high": 45.6807230139033
+        }
+      ],
+      "FWER": {
+        "estimate": 2.86,
+        "low": 2.4329476978548192,
+        "high": 3.359431241525167
+      },
+      "FWPD": {
+        "estimate": 50.660000000000004,
+        "low": 49.27424218121646,
+        "high": 52.044744452216065
+      },
+      "FWPC": {
+        "estimate": 11.600000000000001,
+        "low": 10.741729036033222,
+        "high": 12.517230473347169
+      }
+    },
+    {
+      "control": "weak",
+      "scenario": 5,
+      "borrow": "Strong",
+      "threshold": 0.9556,
+      "calibration_trials": 2500,
+      "evaluation_trials": 5000,
+      "basket": [
+        {
+          "estimate": 1.1400000000000001,
+          "low": 0.88098452155523,
+          "high": 1.4740353125157526
+        },
+        {
+          "estimate": 7.28,
+          "low": 6.592188404662223,
+          "high": 8.033404049523458
+        },
+        {
+          "estimate": 19.54,
+          "low": 18.464512546527757,
+          "high": 20.662255855965128
+        },
+        {
+          "estimate": 36.24,
+          "low": 34.91864330785936,
+          "high": 37.58248384966862
+        }
+      ],
+      "FWER": {
+        "estimate": 7.6,
+        "low": 6.897587602169662,
+        "high": 8.367513522771182
+      },
+      "FWPD": {
+        "estimate": 39.4,
+        "low": 38.05423140557361,
+        "high": 40.76204387566161
+      },
+      "FWPC": {
+        "estimate": 16.38,
+        "low": 15.3800498654732,
+        "high": 17.431570413312446
+      }
+    },
+    {
+      "control": "weak",
+      "scenario": 6,
+      "borrow": "No",
+      "threshold": 0.9767204469536286,
+      "calibration_trials": 2500,
+      "evaluation_trials": 5000,
+      "basket": [
+        {
+          "estimate": 1.02,
+          "low": 0.7766735898799776,
+          "high": 1.338530492657819
+        },
+        {
+          "estimate": 1.0,
+          "low": 0.7593772813946567,
+          "high": 1.3158575092209417
+        },
+        {
+          "estimate": 0.9400000000000001,
+          "low": 0.707655721568871,
+          "high": 1.2476711932801345
+        },
+        {
+          "estimate": 23.9,
+          "low": 22.738220578651728,
+          "high": 25.101853462880264
+        }
+      ],
+      "FWER": {
+        "estimate": 2.92,
+        "low": 2.4882442945122003,
+        "high": 3.424042520634379
+      },
+      "FWPD": {
+        "estimate": 23.9,
+        "low": 22.738220578651728,
+        "high": 25.101853462880264
+      },
+      "FWPC": {
+        "estimate": 23.9,
+        "low": 22.738220578651728,
+        "high": 25.101853462880264
+      }
+    },
+    {
+      "control": "weak",
+      "scenario": 6,
+      "borrow": "Moderate",
+      "threshold": 0.9686,
+      "calibration_trials": 2500,
+      "evaluation_trials": 5000,
+      "basket": [
+        {
+          "estimate": 2.5,
+          "low": 2.1023493755648905,
+          "high": 2.970582309215537
+        },
+        {
+          "estimate": 2.64,
+          "low": 2.2306626510353804,
+          "high": 3.1220540772004313
+        },
+        {
+          "estimate": 2.56,
+          "low": 2.157299196762935,
+          "high": 3.035540363784086
+        },
+        {
+          "estimate": 25.3,
+          "low": 24.114285040842557,
+          "high": 26.52363943524327
+        }
+      ],
+      "FWER": {
+        "estimate": 6.76,
+        "low": 6.096785843452043,
+        "high": 7.489605020756496
+      },
+      "FWPD": {
+        "estimate": 25.3,
+        "low": 24.114285040842557,
+        "high": 26.52363943524327
+      },
+      "FWPC": {
+        "estimate": 25.3,
+        "low": 24.114285040842557,
+        "high": 26.52363943524327
+      }
+    },
+    {
+      "control": "weak",
+      "scenario": 6,
+      "borrow": "Strong",
+      "threshold": 0.9556,
+      "calibration_trials": 2500,
+      "evaluation_trials": 5000,
+      "basket": [
+        {
+          "estimate": 6.88,
+          "low": 6.211009257017857,
+          "high": 7.615197358723869
+        },
+        {
+          "estimate": 7.12,
+          "low": 6.439638427486137,
+          "high": 7.8661996913219605
+        },
+        {
+          "estimate": 6.52,
+          "low": 5.868528927131244,
+          "high": 7.238230434010924
+        },
+        {
+          "estimate": 21.240000000000002,
+          "low": 20.128612211510866,
+          "high": 22.39554600436883
+        }
+      ],
+      "FWER": {
+        "estimate": 12.479999999999999,
+        "low": 11.592642715761539,
+        "high": 13.424965638195548
+      },
+      "FWPD": {
+        "estimate": 21.240000000000002,
+        "low": 20.128612211510866,
+        "high": 22.39554600436883
+      },
+      "FWPC": {
+        "estimate": 21.240000000000002,
+        "low": 20.128612211510866,
+        "high": 22.39554600436883
+      }
+    },
+    {
+      "control": "strong",
+      "scenario": 1,
+      "borrow": "No",
+      "threshold": 0.9767204469536286,
+      "calibration_trials": 2500,
+      "evaluation_trials": 5000,
+      "basket": [
+        {
+          "estimate": 1.1199999999999999,
+          "low": 0.8635392875722449,
+          "high": 1.4515112545765398
+        },
+        {
+          "estimate": 1.0,
+          "low": 0.7593772813946567,
+          "high": 1.3158575092209417
+        },
+        {
+          "estimate": 0.86,
+          "low": 0.6391175631594939,
+          "high": 1.1563321840007208
+        },
+        {
+          "estimate": 0.9400000000000001,
+          "low": 0.707655721568871,
+          "high": 1.2476711932801345
+        }
+      ],
+      "FWER": {
+        "estimate": 3.88,
+        "low": 3.3791558410704257,
+        "high": 4.451656986341645
+      },
+      "FWPD": null,
+      "FWPC": null
+    },
+    {
+      "control": "strong",
+      "scenario": 1,
+      "borrow": "Moderate",
+      "threshold": 0.9812,
+      "calibration_trials": 2500,
+      "evaluation_trials": 5000,
+      "basket": [
+        {
+          "estimate": 0.72,
+          "low": 0.5205395997454866,
+          "high": 0.9951251039593437
+        },
+        {
+          "estimate": 0.72,
+          "low": 0.5205395997454866,
+          "high": 0.9951251039593437
+        },
+        {
+          "estimate": 0.72,
+          "low": 0.5205395997454866,
+          "high": 0.9951251039593437
+        },
+        {
+          "estimate": 0.64,
+          "low": 0.4537188108410646,
+          "high": 0.9020687251749749
+        }
+      ],
+      "FWER": {
+        "estimate": 2.56,
+        "low": 2.157299196762935,
+        "high": 3.035540363784086
+      },
+      "FWPD": null,
+      "FWPC": null
+    },
+    {
+      "control": "strong",
+      "scenario": 1,
+      "borrow": "Strong",
+      "threshold": 0.9958,
+      "calibration_trials": 2500,
+      "evaluation_trials": 5000,
+      "basket": [
+        {
+          "estimate": 0.1,
+          "low": 0.042721349110879964,
+          "high": 0.2338953050058211
+        },
+        {
+          "estimate": 0.06,
+          "low": 0.020407465419434643,
+          "high": 0.1762706048528709
+        },
+        {
+          "estimate": 0.13999999999999999,
+          "low": 0.06783326019524562,
+          "high": 0.28872197776585085
+        },
+        {
+          "estimate": 0.1,
+          "low": 0.042721349110879964,
+          "high": 0.2338953050058211
+        }
+      ],
+      "FWER": {
+        "estimate": 0.33999999999999997,
+        "low": 0.21239367958294425,
+        "high": 0.5438544776001295
+      },
+      "FWPD": null,
+      "FWPC": null
+    },
+    {
+      "control": "strong",
+      "scenario": 2,
+      "borrow": "No",
+      "threshold": 0.9767204469536286,
+      "calibration_trials": 2500,
+      "evaluation_trials": 5000,
+      "basket": [
+        {
+          "estimate": 23.34,
+          "low": 22.18827868044027,
+          "high": 24.53265518727018
+        },
+        {
+          "estimate": 23.119999999999997,
+          "low": 21.97230811920445,
+          "high": 24.308963537361826
+        },
+        {
+          "estimate": 23.7,
+          "low": 22.54178029175559,
+          "high": 24.89860083055442
+        },
+        {
+          "estimate": 23.06,
+          "low": 21.91341479334722,
+          "high": 24.247948987452467
+        }
+      ],
+      "FWER": null,
+      "FWPD": {
+        "estimate": 65.5,
+        "low": 64.17092330999894,
+        "high": 66.8052779297043
+      },
+      "FWPC": {
+        "estimate": 0.24,
+        "low": 0.13734655564128323,
+        "high": 0.4190551419308018
+      }
+    },
+    {
+      "control": "strong",
+      "scenario": 2,
+      "borrow": "Moderate",
+      "threshold": 0.9812,
+      "calibration_trials": 2500,
+      "evaluation_trials": 5000,
+      "basket": [
+        {
+          "estimate": 43.0,
+          "low": 41.6336354741589,
+          "high": 44.3771123530719
+        },
+        {
+          "estimate": 43.0,
+          "low": 41.6336354741589,
+          "high": 44.3771123530719
+        },
+        {
+          "estimate": 42.68,
+          "low": 41.31516303766401,
+          "high": 44.056076118811646
+        },
+        {
+          "estimate": 42.88,
+          "low": 41.51420145698593,
+          "high": 44.2567306187117
+        }
+      ],
+      "FWER": null,
+      "FWPD": {
+        "estimate": 79.14,
+        "low": 77.9916321873757,
+        "high": 80.24362614326637
+      },
+      "FWPC": {
+        "estimate": 10.02,
+        "low": 9.218165360924937,
+        "high": 10.883220086601831
+      }
+    },
+    {
+      "control": "strong",
+      "scenario": 2,
+      "borrow": "Strong",
+      "threshold": 0.9958,
+      "calibration_trials": 2500,
+      "evaluation_trials": 5000,
+      "basket": [
+        {
+          "estimate": 36.5,
+          "low": 35.17640423355236,
+          "high": 37.84432371896419
+        },
+        {
+          "estimate": 36.8,
+          "low": 35.473872775385715,
+          "high": 38.1463945559638
+        },
+        {
+          "estimate": 36.3,
+          "low": 34.97812286687888,
+          "high": 37.642912166415684
+        },
+        {
+          "estimate": 36.38,
+          "low": 35.057432430790485,
+          "high": 37.72347977019289
+        }
+      ],
+      "FWER": null,
+      "FWPD": {
+        "estimate": 61.5,
+        "low": 60.14291172560887,
+        "high": 62.83943112965481
+      },
+      "FWPC": {
+        "estimate": 13.239999999999998,
+        "low": 12.328722199815104,
+        "high": 14.2077192471855
+      }
+    },
+    {
+      "control": "strong",
+      "scenario": 3,
+      "borrow": "No",
+      "threshold": 0.9767204469536286,
+      "calibration_trials": 2500,
+      "evaluation_trials": 5000,
+      "basket": [
+        {
+          "estimate": 0.88,
+          "low": 0.6562037439973316,
+          "high": 1.1792152950850807
+        },
+        {
+          "estimate": 23.96,
+          "low": 22.797159635998813,
+          "high": 25.162822281299768
+        },
+        {
+          "estimate": 23.599999999999998,
+          "low": 22.44357362450145,
+          "high": 24.79696103819757
+        },
+        {
+          "estimate": 23.94,
+          "low": 22.77751292727921,
+          "high": 25.142499698097172
+        }
+      ],
+      "FWER": {
+        "estimate": 0.88,
+        "low": 0.6562037439973316,
+        "high": 1.1792152950850807
+      },
+      "FWPD": {
+        "estimate": 55.44,
+        "low": 54.05866966507023,
+        "high": 56.81297773776755
+      },
+      "FWPC": {
+        "estimate": 1.3599999999999999,
+        "low": 1.0742591831619501,
+        "high": 1.7204228620532072
+      }
+    },
+    {
+      "control": "strong",
+      "scenario": 3,
+      "borrow": "Moderate",
+      "threshold": 0.9812,
+      "calibration_trials": 2500,
+      "evaluation_trials": 5000,
+      "basket": [
+        {
+          "estimate": 4.32,
+          "low": 3.7906663853665874,
+          "high": 4.9194708643338325
+        },
+        {
+          "estimate": 32.56,
+          "low": 31.274953197838535,
+          "high": 33.87182424600506
+        },
+        {
+          "estimate": 32.78,
+          "low": 31.492533778888344,
+          "high": 34.09390587609943
+        },
+        {
+          "estimate": 33.0,
+          "low": 31.710146743428382,
+          "high": 34.31595512270357
+        }
+      ],
+      "FWER": {
+        "estimate": 4.32,
+        "low": 3.7906663853665874,
+        "high": 4.9194708643338325
+      },
+      "FWPD": {
+        "estimate": 61.8,
+        "low": 60.444671416292415,
+        "high": 63.13721081780423
+      },
+      "FWPC": {
+        "estimate": 7.42,
+        "low": 6.725752374600619,
+        "high": 8.179625123040445
+      }
+    },
+    {
+      "control": "strong",
+      "scenario": 3,
+      "borrow": "Strong",
+      "threshold": 0.9958,
+      "calibration_trials": 2500,
+      "evaluation_trials": 5000,
+      "basket": [
+        {
+          "estimate": 4.46,
+          "low": 3.9219458507478335,
+          "high": 5.0679764424079705
+        },
+        {
+          "estimate": 21.68,
+          "low": 20.55980726182023,
+          "high": 22.84367537634781
+        },
+        {
+          "estimate": 20.74,
+          "low": 19.63885570128633,
+          "high": 21.88607021653842
+        },
+        {
+          "estimate": 21.18,
+          "low": 20.06982795432069,
+          "high": 22.334422385792408
+        }
+      ],
+      "FWER": {
+        "estimate": 4.46,
+        "low": 3.9219458507478335,
+        "high": 5.0679764424079705
+      },
+      "FWPD": {
+        "estimate": 36.7,
+        "low": 35.37471041019262,
+        "high": 38.0457104615459
+      },
+      "FWPC": {
+        "estimate": 7.32,
+        "low": 6.630341758111985,
+        "high": 8.07518927991809
+      }
+    },
+    {
+      "control": "strong",
+      "scenario": 4,
+      "borrow": "No",
+      "threshold": 0.9767204469536286,
+      "calibration_trials": 2500,
+      "evaluation_trials": 5000,
+      "basket": [
+        {
+          "estimate": 0.86,
+          "low": 0.6391175631594939,
+          "high": 1.1563321840007208
+        },
+        {
+          "estimate": 1.1400000000000001,
+          "low": 0.88098452155523,
+          "high": 1.4740353125157526
+        },
+        {
+          "estimate": 23.62,
+          "low": 22.463214236295485,
+          "high": 24.817289718325732
+        },
+        {
+          "estimate": 23.52,
+          "low": 22.365014795115137,
+          "high": 24.715642699895092
+        }
+      ],
+      "FWER": {
+        "estimate": 2.0,
+        "low": 1.6471992331652408,
+        "high": 2.4265001535602435
+      },
+      "FWPD": {
+        "estimate": 41.8,
+        "low": 40.439666379417375,
+        "high": 43.17292393248156
+      },
+      "FWPC": {
+        "estimate": 5.34,
+        "low": 4.750397071369691,
+        "high": 5.998174066362813
+      }
+    },
+    {
+      "control": "strong",
+      "scenario": 4,
+      "borrow": "Moderate",
+      "threshold": 0.9812,
+      "calibration_trials": 2500,
+      "evaluation_trials": 5000,
+      "basket": [
+        {
+          "estimate": 2.4,
+          "low": 2.0109114739861695,
+          "high": 2.8621737511832688
+        },
+        {
+          "estimate": 2.56,
+          "low": 2.157299196762935,
+          "high": 3.035540363784086
+        },
+        {
+          "estimate": 24.98,
+          "low": 23.799607101781522,
+          "high": 26.198808703549137
+        },
+        {
+          "estimate": 25.14,
+          "low": 23.956935223808443,
+          "high": 26.361234916899807
+        }
+      ],
+      "FWER": {
+        "estimate": 4.66,
+        "low": 4.109752422905179,
+        "high": 5.279862789472603
+      },
+      "FWPD": {
+        "estimate": 40.12,
+        "low": 38.769507714592784,
+        "high": 41.48566207584155
+      },
+      "FWPC": {
+        "estimate": 10.0,
+        "low": 9.198917998158555,
+        "high": 10.862498157446018
+      }
+    },
+    {
+      "control": "strong",
+      "scenario": 4,
+      "borrow": "Strong",
+      "threshold": 0.9958,
+      "calibration_trials": 2500,
+      "evaluation_trials": 5000,
+      "basket": [
+        {
+          "estimate": 1.34,
+          "low": 1.0565931089532108,
+          "high": 1.6981196443397488
+        },
+        {
+          "estimate": 1.5599999999999998,
+          "low": 1.2518237134049048,
+          "high": 1.9425512510322291
+        },
+        {
+          "estimate": 10.16,
+          "low": 9.352925326717292,
+          "high": 11.028245164264858
+        },
+        {
+          "estimate": 10.16,
+          "low": 9.352925326717292,
+          "high": 11.028245164264858
+        }
+      ],
+      "FWER": {
+        "estimate": 2.56,
+        "low": 2.157299196762935,
+        "high": 3.035540363784086
+      },
+      "FWPD": {
+        "estimate": 15.78,
+        "low": 14.795845310986772,
+        "high": 16.816696210132942
+      },
+      "FWPC": {
+        "estimate": 4.54,
+        "low": 3.9970320043562504,
+        "high": 5.152767456488346
+      }
+    },
+    {
+      "control": "strong",
+      "scenario": 5,
+      "borrow": "No",
+      "threshold": 0.9767204469536286,
+      "calibration_trials": 2500,
+      "evaluation_trials": 5000,
+      "basket": [
+        {
+          "estimate": 0.0,
+          "low": 0.0,
+          "high": 0.07677019450571244
+        },
+        {
+          "estimate": 0.98,
+          "low": 0.7421083157823486,
+          "high": 1.2931571829110522
+        },
+        {
+          "estimate": 11.62,
+          "low": 10.761050467536808,
+          "high": 12.537878333765775
+        },
+        {
+          "estimate": 42.24,
+          "low": 40.87735911186356,
+          "high": 43.614555622323735
+        }
+      ],
+      "FWER": {
+        "estimate": 0.98,
+        "low": 0.7421083157823486,
+        "high": 1.2931571829110522
+      },
+      "FWPD": {
+        "estimate": 48.68,
+        "low": 47.29612411262494,
+        "high": 50.06590262051003
+      },
+      "FWPC": {
+        "estimate": 5.18,
+        "low": 4.599384613067905,
+        "high": 5.829432189287018
+      }
+    },
+    {
+      "control": "strong",
+      "scenario": 5,
+      "borrow": "Moderate",
+      "threshold": 0.9812,
+      "calibration_trials": 2500,
+      "evaluation_trials": 5000,
+      "basket": [
+        {
+          "estimate": 0.02,
+          "low": 0.0035305783439365263,
+          "high": 0.11320890808397363
+        },
+        {
+          "estimate": 1.48,
+          "low": 1.1806099315891447,
+          "high": 1.853887865159199
+        },
+        {
+          "estimate": 11.78,
+          "low": 10.915651997897706,
+          "high": 12.703031138782464
+        },
+        {
+          "estimate": 37.04,
+          "low": 35.71188760752549,
+          "high": 38.3880112268904
+        }
+      ],
+      "FWER": {
+        "estimate": 1.48,
+        "low": 1.1806099315891447,
+        "high": 1.853887865159199
+      },
+      "FWPD": {
+        "estimate": 42.1,
+        "low": 40.73808115884001,
+        "high": 43.474048531891896
+      },
+      "FWPC": {
+        "estimate": 6.72,
+        "low": 6.058725246047214,
+        "high": 7.447727034316931
+      }
+    },
+    {
+      "control": "strong",
+      "scenario": 5,
+      "borrow": "Strong",
+      "threshold": 0.9958,
+      "calibration_trials": 2500,
+      "evaluation_trials": 5000,
+      "basket": [
+        {
+          "estimate": 0.04,
+          "low": 0.010970128207763503,
+          "high": 0.14573865014234438
+        },
+        {
+          "estimate": 0.42,
+          "low": 0.27487744103146716,
+          "high": 0.6412478838403972
+        },
+        {
+          "estimate": 3.04,
+          "low": 2.5989912325785784,
+          "high": 3.5531113341011875
+        },
+        {
+          "estimate": 9.379999999999999,
+          "low": 8.602771364704209,
+          "high": 10.21959674131223
+        }
+      ],
+      "FWER": {
+        "estimate": 0.42,
+        "low": 0.27487744103146716,
+        "high": 0.6412478838403972
+      },
+      "FWPD": {
+        "estimate": 10.66,
+        "low": 9.83460562167133,
+        "high": 11.545797167365764
+      },
+      "FWPC": {
+        "estimate": 1.76,
+        "low": 1.4308249555492083,
+        "high": 2.163242928109904
+      }
+    },
+    {
+      "control": "strong",
+      "scenario": 6,
+      "borrow": "No",
+      "threshold": 0.9767204469536286,
+      "calibration_trials": 2500,
+      "evaluation_trials": 5000,
+      "basket": [
+        {
+          "estimate": 1.02,
+          "low": 0.7766735898799776,
+          "high": 1.338530492657819
+        },
+        {
+          "estimate": 1.0,
+          "low": 0.7593772813946567,
+          "high": 1.3158575092209417
+        },
+        {
+          "estimate": 0.9400000000000001,
+          "low": 0.707655721568871,
+          "high": 1.2476711932801345
+        },
+        {
+          "estimate": 23.9,
+          "low": 22.738220578651728,
+          "high": 25.101853462880264
+        }
+      ],
+      "FWER": {
+        "estimate": 2.92,
+        "low": 2.4882442945122003,
+        "high": 3.424042520634379
+      },
+      "FWPD": {
+        "estimate": 23.9,
+        "low": 22.738220578651728,
+        "high": 25.101853462880264
+      },
+      "FWPC": {
+        "estimate": 23.9,
+        "low": 22.738220578651728,
+        "high": 25.101853462880264
+      }
+    },
+    {
+      "control": "strong",
+      "scenario": 6,
+      "borrow": "Moderate",
+      "threshold": 0.9812,
+      "calibration_trials": 2500,
+      "evaluation_trials": 5000,
+      "basket": [
+        {
+          "estimate": 1.44,
+          "low": 1.1450945038477642,
+          "high": 1.8094647090561842
+        },
+        {
+          "estimate": 1.5599999999999998,
+          "low": 1.2518237134049048,
+          "high": 1.9425512510322291
+        },
+        {
+          "estimate": 1.44,
+          "low": 1.1450945038477642,
+          "high": 1.8094647090561842
+        },
+        {
+          "estimate": 18.84,
+          "low": 17.780210247474486,
+          "high": 19.94763293774148
+        }
+      ],
+      "FWER": {
+        "estimate": 4.0,
+        "low": 3.4912144402327185,
+        "high": 4.579414138712537
+      },
+      "FWPD": {
+        "estimate": 18.84,
+        "low": 17.780210247474486,
+        "high": 19.94763293774148
+      },
+      "FWPC": {
+        "estimate": 18.84,
+        "low": 17.780210247474486,
+        "high": 19.94763293774148
+      }
+    },
+    {
+      "control": "strong",
+      "scenario": 6,
+      "borrow": "Strong",
+      "threshold": 0.9958,
+      "calibration_trials": 2500,
+      "evaluation_trials": 5000,
+      "basket": [
+        {
+          "estimate": 0.66,
+          "low": 0.47035107132362636,
+          "high": 0.9254057566146109
+        },
+        {
+          "estimate": 0.48,
+          "low": 0.3227780878929331,
+          "high": 0.7132551127455243
+        },
+        {
+          "estimate": 0.52,
+          "low": 0.35511686418045246,
+          "high": 0.7608549203024007
+        },
+        {
+          "estimate": 4.42,
+          "low": 3.8844214757118958,
+          "high": 5.025562233599513
+        }
+      ],
+      "FWER": {
+        "estimate": 1.28,
+        "low": 1.0037035568302635,
+        "high": 1.6311013206961034
+      },
+      "FWPD": {
+        "estimate": 4.42,
+        "low": 3.8844214757118958,
+        "high": 5.025562233599513
+      },
+      "FWPC": {
+        "estimate": 4.42,
+        "low": 3.8844214757118958,
+        "high": 5.025562233599513
+      }
+    }
+  ]
+}

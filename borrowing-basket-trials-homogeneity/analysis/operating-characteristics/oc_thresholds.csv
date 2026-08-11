@@ -1,0 +1,7 @@
+"control","borrow","threshold","calibration_trials_per_scenario","target_fwer"
+"weak","No",0.976720365797278,2500,0.05
+"weak","Moderate",0.9674,2500,0.05
+"weak","Strong",0.95,2500,0.05
+"strong","No",0.976720365797278,2500,0.05
+"strong","Moderate",0.9818,2500,0.05
+"strong","Strong",0.996,2500,0.05

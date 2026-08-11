@@ -1,0 +1,15 @@
+{
+  "implementation": "Python",
+  "chains": 4,
+  "iterations_per_chain": 40000,
+  "burn_in_per_chain": 10000,
+  "retained_draws": 120000,
+  "mean_gamma_acceptance": 0.43592875,
+  "mean_sigma_acceptance": 0.556575,
+  "max_response_rate_rhat": 1.0018248852470024,
+  "sigma_rhat": 1.0045966529017516,
+  "interval_width_reduction": 0.5109879269500297,
+  "python_version": "3.14.6",
+  "numpy_version": "2.5.2",
+  "scipy_version": "1.18.0"
+}
