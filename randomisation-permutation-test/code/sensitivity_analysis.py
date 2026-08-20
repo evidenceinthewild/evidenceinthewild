@@ -1,14 +1,16 @@
 """
 Sensitivity Analysis for Eteplirsen Permutation Tests
 =====================================================
-Tests robustness of the permutation p-value across many plausible
-individual patient allocations that still match published group means.
+Examines sensitivity of the permutation p-value across generated individual
+outcome configurations that preserve selected group-mean targets.
 
-The key question: does the permutation result depend on how we
-distributed individual changes within each group, or is it robust?
+The generation ranges are ad hoc and do not define a probability model for
+the unknown patient data. Reported percentages are properties of this
+generator, not probabilities about the unobserved original-data p-value.
 
 Usage:
-    Run from the project root (the parent of code/, results/, figures/):
+    Invoke this script by path from any working directory. Inputs and outputs
+    are resolved relative to the script location. From the project root:
         python code/sensitivity_analysis.py
 """
 
@@ -28,12 +30,13 @@ PROJECT_ROOT = os.path.dirname(SCRIPT_DIR)
 RESULTS_DIR = os.path.join(PROJECT_ROOT, 'results')
 os.makedirs(RESULTS_DIR, exist_ok=True)
 
-# Fixed constraints
-# Patient 010: change = -213 (exact from paper)
-# Patient 009: change = -294 (derived from CE-23; baseline 346m from paper)
-# 50mg group mean change = 12.5m (from Figure 6)
-# Placebo group mean change = -55.0m (from Figure 6)
-# mITT eteplirsen mean change = +15.0m (2 ambulant 30mg + 4 50mg) / 6
+# Selected targets and constraints; see ../PROVENANCE.md.
+# Patient 010: Week 24 change = -213 (reported in the paper).
+# Patient 009: Week 24 change = -294 (reconstructed; not a reported value).
+# 50mg group mean change = 12.5m (analysis input requiring source verification;
+#                                not separately reported by Figure 6).
+# Placebo group mean change = -55.0m (approximate graphical target).
+# mITT eteplirsen mean change = +15.0m (approximate combined-cohort target).
 
 def two_arm_perm_pvalue(treatment, control):
     """Exact two-sided permutation p-value."""
@@ -51,13 +54,12 @@ def two_arm_perm_pvalue(treatment, control):
         total += 1
     return count_extreme / total
 
-def generate_plausible_changes(group_mean, n, constraints=None, n_samples=5000):
+def generate_configurations(group_mean, n, constraints=None, n_samples=5000):
     """
-    Generate plausible individual change sets that sum to n * group_mean.
+    Generate individual change sets that sum to n * group_mean.
 
-    For DMD patients in a 24-week study, individual changes are constrained
-    to physiologically plausible ranges. Ranges are intentionally wide to
-    avoid biasing toward significance; see note at end of output.
+    The ranges are deliberately broad but ad hoc. They support a stress test;
+    they are not a validated model for the missing patient outcomes.
     """
     target_sum = n * group_mean
     samples = []
@@ -80,7 +82,7 @@ def generate_plausible_changes(group_mean, n, constraints=None, n_samples=5000):
         adjustment = (target_sum - current_sum) / n
         vals = vals + adjustment
 
-        # Check all values are in plausible range
+        # Check all values remain within the configured ad hoc range.
         if constraints == 'placebo' and np.all(vals >= -200) and np.all(vals <= 50):
             samples.append(vals.tolist())
         elif constraints == '50mg' and np.all(vals >= -80) and np.all(vals <= 80):
@@ -94,19 +96,20 @@ def generate_plausible_changes(group_mean, n, constraints=None, n_samples=5000):
     return samples[:n_samples]
 
 print("=" * 70)
-print("SENSITIVITY ANALYSIS (two-sided p-values)")
-print("Varying individual patient changes while preserving group means")
+print("GENERATOR-BASED SENSITIVITY ANALYSIS (two-sided p-values)")
+print("Varying individual patient changes while preserving selected group-mean targets")
 print("=" * 70)
 
-# Generate many plausible individual allocations
+# Generate many outcome configurations under the ad hoc ranges
 n_sims = 5000
-placebo_samples = generate_plausible_changes(-55.0, 4, 'placebo', n_sims)
-arm50_samples = generate_plausible_changes(12.5, 4, '50mg', n_sims)
-arm30_mitt_samples = generate_plausible_changes(20.0, 2, '30mg_mitt', n_sims)
-# mITT 30mg ambulant mean = (25 + 15) / 2 = 20.0 (matching published ~+15m for full mITT)
+placebo_samples = generate_configurations(-55.0, 4, 'placebo', n_sims)
+arm50_samples = generate_configurations(12.5, 4, '50mg', n_sims)
+arm30_mitt_samples = generate_configurations(20.0, 2, '30mg_mitt', n_sims)
+# mITT 30mg ambulant mean = (25 + 15) / 2 = 20.0 in the displayed construction;
+# combined with the selected 50mg target, this yields the approximate +15m target.
 
 n_available = min(len(placebo_samples), len(arm50_samples), len(arm30_mitt_samples))
-print(f"\nGenerated {n_available} plausible patient allocations per arm")
+print(f"\nGenerated {n_available} outcome configurations per arm")
 
 # ---- Test A: 50mg vs placebo (key comparison) ----
 print(f"\n--- 50 mg/kg vs Placebo (each n=4), two-sided ---")
@@ -124,6 +127,8 @@ print(f"  Median p-value:  {np.median(pvals_50v):.4f}")
 print(f"  Range:           [{np.min(pvals_50v):.4f}, {np.max(pvals_50v):.4f}]")
 print(f"  % below p<0.05:  {100*np.mean(pvals_50v < 0.05):.1f}%")
 print(f"  % below p<0.10:  {100*np.mean(pvals_50v < 0.10):.1f}%")
+print("  4-v-4 grid:      2/70, 4/70, 6/70, ...")
+print("  Therefore p<0.05 means exactly p=2/70 for these configurations.")
 
 # ---- Test B: mITT eteplirsen vs placebo ----
 print(f"\n--- mITT Eteplirsen (n=6) vs Placebo (n=4), two-sided ---")
@@ -152,22 +157,24 @@ print("INTERPRETATION")
 print(f"{'='*70}")
 print(f"""
 50mg vs placebo (two-sided):
-  Below p<0.05 in {100*np.mean(pvals_50v < 0.05):.0f}% of plausible allocations.
-  Below p<0.10 in {100*np.mean(pvals_50v < 0.10):.0f}% of plausible allocations.
+  Below p<0.05 in {100*np.mean(pvals_50v < 0.05):.0f}% of generated configurations.
+  Below p<0.10 in {100*np.mean(pvals_50v < 0.10):.0f}% of generated configurations.
 
 mITT eteplirsen vs placebo (two-sided):
-  Below p<0.05 in {100*np.mean(pvals_mitt < 0.05):.0f}% of plausible allocations.
-  Below p<0.10 in {100*np.mean(pvals_mitt < 0.10):.0f}% of plausible allocations.
+  Below p<0.05 in {100*np.mean(pvals_mitt < 0.05):.0f}% of generated configurations.
+  Below p<0.10 in {100*np.mean(pvals_mitt < 0.10):.0f}% of generated configurations.
 
-The observed difference in group means is fixed regardless of how individual
-values are distributed. The p-value varies because the permutation distribution
-depends on the full set of values being permuted.
+The difference between the selected group-mean targets is fixed regardless of
+how individual values are distributed. The p-value varies because the
+permutation distribution depends on the full set of values being permuted.
 
 The individual-level ranges used here are ad hoc but intentionally wide. The
-primary constraint is the published group mean; within-group variability is
-a secondary influence on the permutation p-value. Narrower physiological
-constraints (e.g., using the published within-group SDs) would reduce
-the spread of p-values.
+group means are selected reconstruction targets, not a complete identification
+of the missing outcome vector. These frequencies describe the generator and
+must not be interpreted as probabilities about the original patient data.
+
+The mITT calculation follows post-randomisation exclusion and is exploratory;
+this sensitivity analysis does not resolve that selection problem.
 
 Outputs saved to {RESULTS_DIR}/
 """)
